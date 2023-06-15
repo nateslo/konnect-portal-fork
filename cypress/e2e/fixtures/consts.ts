@@ -18,7 +18,12 @@ const product: Product = {
   id: 'a5afb115-025e-4da1-a013-bf05b326e0a51',
   name: 'barAPI',
   description: null,
-  labels: {}
+  document_count: 0,
+  latest_version: {
+    id: versions[0].id,
+    name: versions[0].name
+  },
+  version_count: 1
 }
 
 const productVersion: ProductVersion = {
@@ -62,7 +67,7 @@ const apps: GetApplicationResponse[] = [
   }
 ]
 
-const serviceRegistration: GetRegistrationResponse = {
+const productRegistration: GetRegistrationResponse = {
   created_at: '2022-03-25T13:15:02.104Z',
   updated_at: '2022-03-25T13:15:02.104Z',
   id: 'f3081666-e388-41ac-a6c0-9f37de2c2102',
@@ -82,7 +87,8 @@ const defaultContext: PortalContext = {
   basic_auth_enabled: true,
   oidc_auth_enabled: false,
   featureset_id: '6202956f054d96149719eed0',
-  rbac_enabled: false
+  rbac_enabled: false,
+  allowed_time_period: '2022-03-25T13:15:02.104Z'
 }
 
-export { versions, product, productVersion, serviceRegistration, apps, defaultContext }
+export { versions, product, productVersion, productRegistration, apps, defaultContext }

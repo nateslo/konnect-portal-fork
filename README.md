@@ -9,7 +9,24 @@
 ![Twitter Follow](https://img.shields.io/twitter/follow/thekonginc?style=social)
 # Konnect Dev Portal Client
 
-This repo is the [OSS][oss-url] Konnect Dev Portal Client, you may use this as a starting point for you own custom Konnect Dev Portal that consumes the Konnect Portal API.
+This repo is an [open source][oss-url] reference implementation of a Konnect Developer Portal Client leveraging the [Konnect Developer Portal Client API][portal-api-url] and [JavaScript SDK][javscript-sdk-url].
+
+The [Konnect Dev Portal][konnect-docs-url] is a web application for developers to locate, access, and consume API services. The Dev Portal enables developers to browse and search API documentation, test API endpoints, and manage their own credentials. 
+
+In [Kong Konnect][kong-konnect-register-url], you have two hosting options for the Dev Portal web user interface: a cloud hosted Dev Portal with Konnect or a self-hosted, open source Dev Portal powered by Konnect APIs.
+
+## Self-hosted Dev Portal benefits
+
+There are several benefits to keep in mind when deciding whether to use a Konnect-hosted or self-hosted Dev Portal. The self-hosted portal provides the following benefits:
+
+* Fully customizable: Use the example frontend Dev Portal application as a starting point and then customize Dev Portal for your needs using the Portal API. You can also integrate the API specs with workflows tailored to your organization’s own processes.
+* Hosting service choice: When you self-host, you also get to choose which hosting service you use to deploy your Dev Portal.
+* Range of customization options: With the self-hosted Dev Portal, you determine how much you want to customize. You can choose to use the example application right out of the box or you can use the Portal API to have more fine-grained control.
+* Configurable internationalization
+* Automated front-end test suite powered by Cypress
+
+With those benefits in mind, there _is_ the hosting cost to deploy this single page portal and you may need developer/designer support to fully customize this modern web-application to meet your business requirements.
+
 ## Getting started
 
 ### Prerequisites:
@@ -17,7 +34,7 @@ This repo is the [OSS][oss-url] Konnect Dev Portal Client, you may use this as a
 * Kong Konnect account
    * You can Start a Free trial at: [konghq.com][kong-konnect-register-url]
    * Documentation for Kong Konnect is available at: [docs.konghq.com][konnect-docs-url]
-* Yarn [^1.22.x][yarn-install url]
+* Yarn [^1.22.x][yarn-install-url]
 
 Install dependencies
 
@@ -112,8 +129,10 @@ limitations under the License.
 
 [custom-dev-portal-url]: https://docs.konghq.com/konnect/dev-portal/customization/#custom-dev-portal-url
 [kong-konnect-register-url]: https://konghq.com/products/kong-konnect/register?utm_medium=referral&utm_source=github&utm_campaign=gateway-konnect&utm_content=konnect-portal-readme
+[portal-api-url]: https://developer.konghq.com/spec/2aad2bcb-8d82-43b3-abdd-1d5e6e84dbd6/b4539157-4ced-4df5-affa-7d790baee356
 [kong-logo-url]: https://konghq.com/wp-content/uploads/2018/05/kong-logo-github-readme.png
 [kong-url]: https://konghq.com/
 [konnect-docs-url]: https://docs.konghq.com/konnect/
 [oss-url]: https://en.wikipedia.org/wiki/Open-source_software
-[yarn-install url]: https://classic.yarnpkg.com/lang/en/docs/install
+[yarn-install-url]: https://classic.yarnpkg.com/lang/en/docs/install
+[javscript-sdk-url]: https://www.npmjs.com/package/@kong/sdk-portal-js

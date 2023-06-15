@@ -29,7 +29,7 @@
           </p>
           <div v-if="registeredApplications.length">
             <p>
-              {{ helpText.applicationRegistration.registeredApplications }}
+              {{ alreadyRegisteredMessage }}
             </p>
             <ul class="registered-apps-list">
               <li
@@ -68,7 +68,7 @@
             </select>
             <router-link
               data-testid="create-application-2"
-              :to="{ name: 'create-application', query: { service_package: $route.params.service_package, service_version: $route.params.service_version } }"
+              :to="{ name: 'create-application', query: { product: $route.params.product, product_version: $route.params.product_version } }"
               class="color-blue-500"
             >
               {{ helpText.applicationRegistration.createNewApplication }}
@@ -90,7 +90,7 @@
         appearance="primary"
         :disabled="currentState.matches('pending')"
         class="mr-3"
-        :to="{ name: 'create-application', query: { service_package: $route.params.service_package, service_version: $route.params.service_version } }"
+        :to="{ name: 'create-application', query: { product: $route.params.product, product_version: $route.params.product_version } }"
       >
         {{ helpText.applicationRegistration.createApplication }}
       </KButton>
@@ -127,6 +127,8 @@ import usePortalApi from '@/hooks/usePortalApi'
 import { useI18nStore } from '@/stores'
 import getMessageFromError from '@/helpers/getMessageFromError'
 import { fetchAll } from '@/helpers/fetchAll'
+import useLDFeatureFlag from '@/hooks/useLDFeatureFlag'
+import { FeatureFlags } from '@/constants/feature-flags'
 
 export default defineComponent({
   name: 'ViewSpecRegistrationModal',
@@ -139,7 +141,7 @@ export default defineComponent({
       type: Boolean,
       default: false
     },
-    service: {
+    product: {
       type: Object,
       default: () => {}
     },
@@ -152,6 +154,7 @@ export default defineComponent({
   emits: ['close'],
 
   setup (props, { emit }) {
+    const apiProductFlagEnabled = useLDFeatureFlag(FeatureFlags.ApiProductBuilder, false)
     const $router = useRouter()
     const $route = useRoute()
     const { notify } = useToaster()
@@ -192,7 +195,7 @@ export default defineComponent({
 
       return {
         default: {
-          title: defaultModal.title(props.service.name, props.version?.name),
+          title: defaultModal.title(props.product.name, props.version?.name),
           buttonText: defaultModal.buttonText
         },
         success: {
@@ -317,6 +320,8 @@ export default defineComponent({
       }
     })
 
+    const alreadyRegisteredMessage = apiProductFlagEnabled ? helpText.applicationRegistration.registeredApplicationsProduct : helpText.applicationRegistration.registeredApplicationsService
+
     return {
       currentState,
       errorMessage,
@@ -325,6 +330,7 @@ export default defineComponent({
       helpText,
       modalText,
       availableApplications,
+      alreadyRegisteredMessage,
       registeredApplications,
       submitSelection,
       closeModal
