@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid'
 import petstoreJson from '../fixtures/oas_specs/petstoreJson.json'
 import petstoreJson30 from '../fixtures/oas_specs/petstoreJson3.0.json'
 import { generateProducts } from './utils/generateProducts'
@@ -53,6 +52,8 @@ Cypress.Commands.add('mockAppearance', (appearance = {}) => {
       }
     }
   }
+  cy.mockLogo()
+  cy.mockCatalogCover()
 
   cy.intercept('GET', '**/api/v2/portal/appearance', {
     statusCode: 200,
@@ -61,6 +62,18 @@ Cypress.Commands.add('mockAppearance', (appearance = {}) => {
       ...appearance
     }
   }).as('getAppearance')
+})
+
+Cypress.Commands.add('mockCatalogCover', () => {
+  cy.intercept('GET', '**/api/v2/portal/catalog-cover', {
+    fixture: 'images/kong-logo.png'
+  }).as('getCatalogCover')
+})
+
+Cypress.Commands.add('mockLogo', () => {
+  cy.intercept('GET', '**/api/v2/portal/logo', {
+    fixture: 'images/kong-logo.png'
+  }).as('getLogo')
 })
 
 Cypress.Commands.add('mockStylesheetFont', (fonts = {
@@ -124,7 +137,7 @@ Cypress.Commands.add('mockDcrPortal', () => {
 
   const portalContextResponse: PortalContext = {
     ...defaultContext,
-    dcr_provider_ids: [uuidv4()]
+    dcr_provider_ids: [crypto.randomUUID()]
   }
 
   return cy.intercept('GET', '**/api/v2/portal', {
@@ -167,6 +180,13 @@ Cypress.Commands.add('mockSuccessfulPasswordReset', () => {
     statusCode: 200,
     delay: 300
   }).as('sendPasswordReset')
+})
+
+Cypress.Commands.add('mockDeveloperLogout', () => {
+  return cy.intercept('POST', '**/api/v2/developer/logout', {
+    statusCode: 200,
+    delay: 300
+  }).as('developerLogout')
 })
 
 Cypress.Commands.add('mockGetUserInfo', () => {
@@ -350,8 +370,8 @@ Cypress.Commands.add('mockProductsCatalog', (count = 1, overrides = [], pageNum 
 })
 
 Cypress.Commands.add('mockGetProductDocumentBySlug', (productId, slug, options = {}) => {
-  const docId = uuidv4()
-  const revId = uuidv4()
+  const docId = crypto.randomUUID()
+  const revId = crypto.randomUUID()
   const time = new Date().toISOString()
 
   const resp = {
@@ -384,7 +404,7 @@ Cypress.Commands.add('mockGetProductDocumentBySlug', (productId, slug, options =
 })
 
 Cypress.Commands.add('mockGetProductDocuments', (productId) => {
-  const docId = uuidv4()
+  const docId = crypto.randomUUID()
 
   const resp: ListDocumentsTree = {
     data: generateDocuments(docId),

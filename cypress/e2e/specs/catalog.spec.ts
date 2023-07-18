@@ -1,23 +1,21 @@
 import { SearchResults, SearchResultsDataInner } from '@kong/sdk-portal-js'
-import { v4 as uuidv4 } from 'uuid'
 import { generateProducts } from '../support/utils/generateProducts'
-import { FeatureFlags } from '@/constants/feature-flags'
 
 const mockProductSearchQuery = (searchQuery: string) => {
-  const searchResults: SearchResultsDataInner[] = [
-    ['barAPI', ['v1-beta'], uuidv4()],
-    ['fooApi', ['v1'], uuidv4()],
-    ['sampleapi', ['v1'], uuidv4()],
-    ['testapi', ['v1'], uuidv4()],
-    ['xapi', ['v1'], uuidv4()]
-  ]
+  const searchResults: SearchResultsDataInner[] = ([
+    ['barAPI', ['v1-beta']],
+    ['fooApi', ['v1']],
+    ['sampleapi', ['v1']],
+    ['testapi', ['v1']],
+    ['xapi', ['v1']]
+  ] as [string, string[]][])
     .filter((data) =>
       searchQuery !== '' ? JSON.stringify(data).includes(searchQuery) : true
     )
-    .map(([name, versions, id]) => ({
+    .map(([name, versions]) => ({
       index: 'product-catalog',
       source: {
-        id,
+        id: crypto.randomUUID(),
         description: '',
         document_count: 0,
         created_at: '',
@@ -25,8 +23,8 @@ const mockProductSearchQuery = (searchQuery: string) => {
         name,
         version_count: versions.length,
         latest_version: {
-          name: versions[0].name,
-          id: versions[0].id
+          name: versions[0],
+          id: crypto.randomUUID()
         }
       }
     }))
@@ -70,6 +68,12 @@ const mockProductSearchResults = (searchResults:SearchResultsDataInner[], pageNu
 }
 
 describe('Catalog', () => {
+  beforeEach(() => {
+    cy.mockStylesheetFont()
+    cy.mockAppearance()
+    cy.mockStylesheetCss()
+  })
+
   describe('Catalog card view', () => {
     beforeEach(() => {
       cy.mockPublicPortal()
@@ -80,23 +84,14 @@ describe('Catalog', () => {
 
     it('loads one product with details', () => {
       cy.get('.catalog-item').should('have.length', 1)
-      cy.get('.catalog-item').should('contain', 'barAPI')
-      cy.get('.catalog-item').should('contain', 'v2')
+      cy.get('.catalog-item').should('contain', 'barAPI0')
+      cy.get('.catalog-item').should('contain', 'v0')
       cy.get('.catalog-item').should('contain', 'great description')
     })
 
-    it('TDX-3134 - catalog title should read "Service" when flag disabled', () => {
-      cy.mockLaunchDarklyFlags([{ name: FeatureFlags.ApiProductBuilder, value: false }]).then(() => {
-        cy.get('.products-label').should('contain', 'Service')
-        cy.title().should('eq', 'Service Catalog | Developer Portal')
-      })
-    })
-
-    it('TDX-3134 - catalog title should read "Product" when flag enabled', () => {
-      cy.mockLaunchDarklyFlags([{ name: FeatureFlags.ApiProductBuilder, value: true }]).then(() => {
-        cy.get('.products-label').should('contain', 'Product')
-        cy.title().should('eq', 'Product Catalog | Developer Portal')
-      })
+    it('sets the catalog title', () => {
+      cy.get('.products-label').should('contain', 'Product')
+      cy.title().should('eq', 'Product Catalog | Developer Portal')
     })
 
     it('goes to details view on header click', () => {
@@ -170,7 +165,7 @@ describe('Catalog', () => {
     it('renders the documentation link for catalog item ', () => {
       cy.mockPrivatePortal()
       cy.mockProductsCatalog(1, [{ description: 'great description', document_count: 1 }])
-
+      cy.mockProduct()
       cy.visit('/')
 
       cy.wait('@productSearch').then(() => {

@@ -1,6 +1,8 @@
+/* eslint-disable no-console */
 // Import commands.js using ES2015 syntax:
 import { GetApplicationResponse, GetRegistrationResponse, PortalAppearance, PortalContext, Product, ProductCatalogIndexSource, ProductVersion, ProductVersionSpecOperationsOperationsInner } from '@kong/sdk-portal-js'
 import './mock-commands'
+import { SinonStub } from 'cypress/types/sinon'
 
 // from https://docs.cypress.io/guides/tooling/typescript-support
 declare global {
@@ -35,11 +37,36 @@ declare global {
       mockStylesheetFont(fonts?: {[key:string]:string}): Chainable<JQuery<HTMLElement>>
       mockStylesheetCss(themeName?: string, fonts?: {[key:string]:string}): Chainable<JQuery<HTMLElement>>
       mockAppearance(appearance?: PortalAppearance): Chainable<JQuery<HTMLElement>>
+      mockLogo(): Chainable<JQuery<HTMLElement>>
+      mockCatalogCover(): Chainable<JQuery<HTMLElement>>
       mockLaunchDarklyFlags(flags: Array<{name:string, value:boolean}>): Chainable<JQuery<HTMLElement>>
       mockDeveloperRefresh(): Chainable<JQuery<HTMLElement>>
+      mockDeveloperLogout(): Chainable<JQuery<HTMLElement>>
     }
   }
 }
 
 // Import commands.js using ES2015 syntax:
 require('cypress-terminal-report/src/installLogsCollector')()
+
+beforeEach(() => {
+  const API_URL = Cypress.env('VITE_PORTAL_API_URL')
+  const notMockedAPIRequests = cy.stub().as('notMockedAPIRequests')
+  const notMockedLDRequests = cy.stub().as('unmockedLaunchDarklyRequests')
+
+  // mock all API requests
+  cy.intercept(`**${API_URL}**`, notMockedAPIRequests)
+
+  // mock all launchdarkly requests
+  cy.intercept('https://*.launchdarkly.com/**', notMockedLDRequests)
+})
+
+afterEach(() => {
+  cy.get<SinonStub>('@notMockedAPIRequests')
+    .then(stub => cy.wrap(stub.getCalls().map(call => call.args[0].url).join(', ')))
+    .then(urls => console.info({ message: 'Unmocked API requests', urls }))
+
+  cy.get<SinonStub>('@unmockedLaunchDarklyRequests')
+    .then(stub => cy.wrap(stub.getCalls().map(call => call.args[0].url).join(', ')))
+    .then(urls => console.info({ message: 'Unmocked LD requests', urls }))
+})
