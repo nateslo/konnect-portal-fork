@@ -5,7 +5,22 @@
     data-testid="api-documentation-page"
   >
     <div class="col content mt-6">
-      <KSkeleton v-if="isDocumentLoading" />
+      <div
+        v-if="product && !product.document_count"
+        data-testid="documentation-empty-state"
+      >
+        <EmptyState>
+          <template #title>
+            {{ helpText.apiDocumentation.emptyTitle }}
+          </template>
+          <template #message>
+            <p>
+              {{ helpText.apiDocumentation.emptyMessage }}
+            </p>
+          </template>
+        </EmptyState>
+      </div>
+      <KSkeleton v-else-if="isDocumentLoading" />
       <template v-else>
         <header class="content-header">
           <KBreadcrumbs
@@ -24,6 +39,7 @@
         />
         <DocumentViewer
           v-else-if="content"
+          data-testid="portal-document-viewer"
           class="portal-document-viewer"
           :document="content"
         />
@@ -31,7 +47,7 @@
     </div>
     <aside class="col sidebar sidebar-sections">
       <KSkeleton
-        v-if="isDocumentLoading"
+        v-if="product?.document_count && isDocumentLoading"
         class="skeleton"
       />
       <DocumentSections
@@ -275,16 +291,18 @@ export default defineComponent({
 }
 
 .portal-document-viewer {
-  --document-viewer-link-color: var(--text_colors-accent);
-  --document-viewer-link-hover-color: var(--text_colors-accent);
-  --document-viewer-font-family-default: var(--font-family-sans);
-  --document-viewer-font-family-monospace: var(--font-family-mono);
-  --document-viewer-font-family-headings: var(--font-family-headings);
+  --kong-ui-document-viewer-font-family-default: var(--font-family-sans);
+  --kong-ui-document-viewer-font-family-monospace: var(--font-family-mono);
+  --kong-ui-document-viewer-font-family-headings: var(--font-family-headings);
+  --kong-ui-document-viewer-link-color: var(--text_colors-link);
+  --kong-ui-document-viewer-link-hover-color: var(--text_colors-accent);
+  --kong-ui-document-viewer-color: var(--text_colors-primary);
+  --kong-ui-document-viewer-code-color: var(--steel-700, #0a2b66);
 
   // This is going to solve some contrast issues with blockquotes
   // and their text colors.
 
-  --document-viewer-code-color: var(--steel-700, #0a2b66);
+  --kong-ui-document-viewer-code-color: var(--steel-700, #0a2b66);
   :deep(blockquote) {
     color: var(--steel-700, #0a2b66);
 

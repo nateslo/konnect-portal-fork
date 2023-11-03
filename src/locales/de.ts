@@ -1,4 +1,6 @@
 import { I18nType } from './i18n-type'
+import { translationNeeded } from '@/locales/index'
+import { en } from '@/locales/en'
 
 export const de: I18nType = {
   login: {
@@ -37,7 +39,10 @@ export const de: I18nType = {
   },
   productVersion: {
     deprecatedWarningProduct: 'Diese Produktversion ist veraltet. Die Endpunkte bleiben voll funktionsfähig, bis diese Version eingestellt wird.',
-    unableToRetrieveDoc: 'Keine Dokumentation verfügbar'
+    unableToRetrieveDoc: 'Keine Dokumentation verfügbar',
+    noProductVersionsDetail: translationNeeded(en.productVersion.noProductVersionsDetail),
+    noProductVersionsTitle: translationNeeded(en.productVersion.noProductVersionsTitle),
+    registerProductVersion: translationNeeded(en.productVersion.registerProductVersion)
   },
   userDropdown: {
     myApps: 'Meine Applikationen',
@@ -98,8 +103,8 @@ export const de: I18nType = {
     delete: 'Löschen',
     proceed: 'Weiter',
     applicationName: 'Name der Applikation',
-    clientID: 'Client ID: ',
-    clientSecret: 'Client Secret: ',
+    clientID: translationNeeded(en.application.clientID),
+    clientSecret: translationNeeded(en.application.clientSecret),
     reqField: ' Pflichtfeld',
     redirectUriLabel: 'Redirect URI',
     applicationCredentials: 'Zugangsdaten der Applikation',
@@ -120,6 +125,32 @@ export const de: I18nType = {
     headerDescription2: '. Das Client Secret wird ',
     headerDescription3: 'nur einmal angezeigt.',
     headerDescription4: 'Bitte kopieren und an einem sicheren Ort speichern.'
+  },
+  analytics: {
+    filterLabelProductVersions: translationNeeded(en.analytics.filterLabelProductVersions),
+    chartOverview: translationNeeded(en.analytics.chartOverview),
+    chartTitleRequests: translationNeeded(en.analytics.chartTitleRequests),
+    chartTitleLatency: translationNeeded(en.analytics.chartTitleLatency),
+    chartTitle4xxProductVersion: translationNeeded(en.analytics.chartTitle4xxProductVersion),
+    chartTitle5xxProductVersion: translationNeeded(en.analytics.chartTitle5xxProductVersion),
+    chartTitle4xxStatusCode: translationNeeded(en.analytics.chartTitle4xxStatusCode),
+    chartTitle5xxStatusCode: translationNeeded(en.analytics.chartTitle5xxStatusCode),
+    dashboard: translationNeeded(en.analytics.dashboard),
+    resultsLimited: translationNeeded(en.analytics.resultsLimited),
+    notAvailable: translationNeeded(en.analytics.notAvailable),
+    sectionCurrent: translationNeeded(en.analytics.sectionCurrent),
+    sectionLast: translationNeeded(en.analytics.sectionLast),
+    sectionPrevious: translationNeeded(en.analytics.sectionPrevious),
+    selectDateRange: translationNeeded(en.analytics.selectDateRange),
+    selectProductVersions: translationNeeded(en.analytics.selectProductVersions),
+    summary: translationNeeded(en.analytics.summary),
+    summary24Hours: translationNeeded(en.analytics.summary24Hours),
+    summary30Days: translationNeeded(en.analytics.summary30Days),
+    summaryTooltip: (timespan: string) => translationNeeded(en.analytics.summaryTooltip(timespan)),
+    timeRange: translationNeeded(en.analytics.timeRange),
+    totalRequests: translationNeeded(en.analytics.totalRequests),
+    unableToFetch: (itemName: string) => translationNeeded(en.analytics.unableToFetch(itemName)),
+    viewAnalytics: translationNeeded(en.analytics.viewAnalytics)
   },
   productList: {
     titleProducts: 'Produkte',
@@ -152,6 +183,8 @@ export const de: I18nType = {
   },
   applicationRegistration: {
     noAvailableApplications: 'Aktuell haben Sie noch keine Applikationen registriert.',
+    noFoundApplications: translationNeeded(en.applicationRegistration.noFoundApplications),
+    searchPlaceholder: translationNeeded(en.applicationRegistration.searchPlaceholder),
     noApplications: 'Keine Applikationen',
     selectApplication: 'Applikation auswählen',
     createNewApplication: 'Neue Applikation anlegen +',
@@ -175,6 +208,8 @@ export const de: I18nType = {
     isEmail: 'E-Mail ist ungültig'
   },
   apiDocumentation: {
+    emptyTitle: translationNeeded(en.apiDocumentation.emptyTitle),
+    emptyMessage: translationNeeded(en.apiDocumentation.emptyMessage),
     error: {
       description: 'Ein unerwarteter Fehler ist aufgetreten, als versucht wurde, das angeforderte Dokument zu laden. Bitte versuchen Sie es später noch einmal',
       linkText: 'Zurück zum Start →'
@@ -187,6 +222,7 @@ export const de: I18nType = {
     linkText: 'Zurück zum Start →'
   },
   sidebar: {
+    noVersions: translationNeeded(en.sidebar.noVersions),
     deprecated: ' (Veraltet)',
     noResultsProduct: 'Keine Produktversionen'
   },
@@ -248,6 +284,8 @@ export const de: I18nType = {
     plus: 'Plus',
     myApps: 'Meine Applikationen',
     refreshSecret: 'Secret erneuern',
+    noSearchResults: translationNeeded(en.myApp.noSearchResults),
+    searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Löschen',
     cancel: 'Abbrechen',
     noApp: 'Keine Applikationen',

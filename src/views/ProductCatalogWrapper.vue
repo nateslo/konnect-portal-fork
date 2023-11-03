@@ -47,7 +47,7 @@
       :search-triggered="searchTriggered"
       :loading="loading"
       @active-view-changed="catalogViewChanged"
-      @cards-page-changed="catalogPageChanged"
+      @list-page-changed="catalogPageChanged"
     />
   </div>
 </template>
@@ -71,7 +71,7 @@ export default defineComponent({
     const searchString = ref('')
     const catalogItems = ref<CatalogItemModel[]>([])
     const totalCount = ref<number>(undefined)
-    const loading = ref<boolean>(null)
+    const loading = ref<boolean>(true)
     const searchTriggered = ref<boolean>(false)
     const catalogView = ref<string>(undefined)
     const catalogPageNumber = ref(1)
@@ -134,29 +134,45 @@ export default defineComponent({
           })
           const { data: sources, meta } = portalEntities
 
-          catalogItems.value = sources.map(({ source }) => {
+          catalogItems.value = await Promise.all(sources.map(async ({ source }) => {
+            let showSpecLink = false
+
+            if (source.latest_version) {
+              await portalApiV2.value.service.versionsApi.getProductVersionSpec({
+                productId: source.id as string,
+                versionId: source.latest_version.id
+              }).then((res) => {
+                if (res.status === 200) {
+                  showSpecLink = true
+                } else if (res.status === 204) {
+                  showSpecLink = false
+                }
+              }).catch(() => {
+                showSpecLink = false
+              })
+            }
+
             return {
               id: source.id,
               title: source.name,
               latestVersion: source.latest_version,
+              showSpecLink,
               description: source.description,
               documentCount: source.document_count,
               versionCount: source.version_count
             }
-          })
+          }))
           totalCount.value = meta.page.total
         } catch (e) {
           console.error('failed to find Service Packages', e)
         }
       } finally {
-        loading.value = null
+        loading.value = false
       }
     }
 
-    const catalogViewChanged = (viewType: string) => {
-      catalogItems.value = []
+    const catalogViewChanged = (viewType: 'grid' | 'table') => {
       catalogView.value = viewType
-      fetchProducts()
     }
 
     const catalogPageChanged = (pageNumber: number) => {
@@ -167,7 +183,10 @@ export default defineComponent({
     }
 
     onBeforeMount(async () => {
-      await loadAppearance()
+      await Promise.all([
+        loadAppearance(),
+        fetchProducts()
+      ])
     })
 
     return {

@@ -7,7 +7,23 @@ import document from '../fixtures/dochub_mocks/document.json'
 import documentTreeJson from '../fixtures/dochub_mocks/documentTree.json'
 import apiDocumentationJson from '../fixtures/dochub_mocks/parentApiDocumentation.json'
 import petstoreOperationsV2 from '../fixtures/v2/petstoreOperations.json'
-import { ListApplicationsResponse, ListDocumentsTree, PortalAppearance, PortalContext, Product, ProductDocument, ProductDocumentRaw, ProductVersionListPage, ProductVersionSpec, ProductVersionSpecOperations, ProductVersionSpecOperationsOperationsInner, SearchResults } from '@kong/sdk-portal-js'
+import { 
+  GetApplicationResponse,
+  ListApplicationsResponse,
+  ListCredentialsResponse,
+  ListDocumentsTree,
+  ListRegistrationsResponse,
+  PortalAppearance,
+  PortalContext,
+  Product,
+  ProductDocument,
+  ProductDocumentRaw,
+  ProductVersionListPage,
+  ProductVersionSpecDocument,
+  ProductVersionSpecOperations,
+  ProductVersionSpecOperationsOperationsInner,
+  SearchResults 
+} from '@kong/sdk-portal-js'
 import { THEMES } from '../fixtures/theme.constant'
 
 Cypress.Commands.add('mockStylesheetCss', (theme = 'mint_rocket', fonts = {
@@ -331,6 +347,60 @@ Cypress.Commands.add('mockRegistrations', (applicationId = '*', registrations = 
   }).as('getRegistrations')
 })
 
+Cypress.Commands.add('mockApplicationWithCredAndReg', (
+  data: GetApplicationResponse,
+  credentials = [],
+  registrations = []
+) => {
+  const applicationResponse: GetApplicationResponse = data
+
+  cy.intercept('GET', `**/api/v2/applications/${data.id}`, {
+    statusCode: 200,
+    body: applicationResponse
+  }).as('getApplication')
+
+  const credsResponse: ListCredentialsResponse = {
+    data: credentials,
+    meta: {
+      page: {
+        total: credentials.length,
+        size: 10,
+        number: 1
+      }
+    }
+  }
+
+  cy.intercept('GET', `**/api/v2/applications/${data.id}/credentials*`, {
+    statusCode: 200,
+    body: credsResponse
+  }).as('getApplicationCredentials')
+
+  const registrationsResponse: ListRegistrationsResponse = {
+    data: registrations,
+    meta: {
+      page: {
+        total: registrations.length,
+        size: 10,
+        number: 1
+      }
+    }
+  }
+
+  cy.intercept('GET', `**/api/v2/applications/${data.id}/registrations*`, {
+    statusCode: 200,
+    body: registrationsResponse
+  }).as('getApplicationRegistrations')
+})
+
+Cypress.Commands.add('mockContextualAnalytics', () => {
+  return cy.intercept(
+    'POST', '**/api/v2/stats', {
+      statusCode: 200,
+      body: { records: [] },
+      delay: 0
+    }).as('getContextualAnalytics')
+})
+
 Cypress.Commands.add('mockProductVersionApplicationRegistration', (version, config = {}) => {
   return cy.intercept(
     'GET',
@@ -347,6 +417,36 @@ Cypress.Commands.add('mockProductVersionApplicationRegistration', (version, conf
         ...config
       }
     }).as('getProductVersionApplicationRegistration')
+})
+
+Cypress.Commands.add('mockProductVersionAvailableRegistrations', (productId, versionId, apps) => {
+  const availableRegistrations = apps.map((app) => {
+    return {
+      created_at: app.created_at,
+      updated_at: app.updated_at,
+      name: app.name,
+      id: app.id,
+      registration_id: null,
+      registration_status: null
+    }
+  })
+
+  const response = {
+    data: availableRegistrations,
+    meta: {
+      page: {
+        number: 1,
+        size: 15,
+        total: availableRegistrations.length
+      }
+    }
+  }
+
+  return cy.intercept(
+    'GET',
+    `**/api/v2/products/${productId}/versions/${versionId}/applications**`, {
+      body: response
+    }).as('getProductVersionAvailableRegistrations')
 })
 
 Cypress.Commands.add('mockProductsCatalog', (count = 1, overrides = [], pageNum = 1, pageSize = 12) => {
@@ -436,7 +536,7 @@ Cypress.Commands.add('mockGetProductDocumentTree', (productId) => {
 })
 
 Cypress.Commands.add('mockProductVersionSpec', (productId = '*', versionId = '*', content = JSON.stringify(petstoreJson30)) => {
-  const specResponse: ProductVersionSpec = {
+  const specResponse: ProductVersionSpecDocument = {
     api_type: 'openapi',
     content
   }

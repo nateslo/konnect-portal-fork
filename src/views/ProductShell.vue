@@ -90,7 +90,16 @@ async function fetchProduct () {
 
     productStore.setProduct(productWithVersion)
   } catch (err) {
+    productStore.setProduct(null)
+
     console.error(err)
+
+    if (err.response?.status === 404) {
+      router.push({
+        name: 'not-found'
+      })
+    }
+
     productError.value = getMessageFromError(err)
   }
 }
@@ -100,14 +109,19 @@ async function fetchDocumentTree () {
 
   try {
     const requestOptions = {
-      productId: id,
-      accept: DocumentContentTypeEnum.VndKonnectDocumentTreejson
+      productId: id
     }
     // @ts-ignore
     // overriding the axios response because we're specifying what we're accepting above
-    const res = await documentationApi.listProductDocuments(requestOptions) as AxiosResponse<ListDocumentsTree, any>
+    if (productStore.product) {
+      const res = await documentationApi.listProductDocuments(requestOptions, {
+        headers: {
+          accept: DocumentContentTypeEnum.VndKonnectDocumentTreejson
+        }
+      }) as AxiosResponse<ListDocumentsTree, any>
 
-    productStore.setDocumentTree((res.data).data)
+      productStore.setDocumentTree((res.data).data)
+    }
   } catch (err) {
     if (err.response.status === 404) {
       productStore.setDocumentTree([])

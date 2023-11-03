@@ -36,6 +36,9 @@ export interface I18nType {
   productVersion: {
     deprecatedWarningProduct: string;
     unableToRetrieveDoc: string;
+    noProductVersionsDetail: string;
+    noProductVersionsTitle: string;
+    registerProductVersion: string;
   };
   userDropdown: {
     myApps: string;
@@ -119,6 +122,32 @@ export interface I18nType {
     headerDescription3: string;
     headerDescription4: string;
   };
+  analytics: {
+    filterLabelProductVersions: string,
+    chartOverview: string,
+    chartTitleRequests: string,
+    chartTitleLatency: string,
+    chartTitle4xxProductVersion: string,
+    chartTitle5xxProductVersion: string,
+    chartTitle4xxStatusCode: string,
+    chartTitle5xxStatusCode: string,
+    dashboard: string,
+    resultsLimited: string,
+    notAvailable: string,
+    sectionCurrent: string,
+    sectionLast: string,
+    sectionPrevious: string,
+    selectDateRange: string,
+    selectProductVersions: string,
+    summary: string,
+    summary24Hours: string,
+    summary30Days: string,
+    summaryTooltip: (timespan: string) => string,
+    timeRange: string,
+    totalRequests: string,
+    unableToFetch: (itemName: string) => string,
+    viewAnalytics: string,
+  },
   productList: {
     titleProducts: string;
     actions: {
@@ -150,12 +179,14 @@ export interface I18nType {
   };
   applicationRegistration: {
     noAvailableApplications: string;
+    noFoundApplications: string;
     noApplications: string;
     selectApplication: string;
     createNewApplication: string;
     createApplication: string;
     cancelButton: string;
     registeredApplicationsProduct: string;
+    searchPlaceholder: string;
     modalApplicationRegistrationDefault: {
       title: (serviceName: string, productVersion: string) => string;
       buttonText: string;
@@ -173,6 +204,8 @@ export interface I18nType {
     isEmail: string;
   };
   apiDocumentation: {
+    emptyTitle: string,
+    emptyMessage: string,
     error: {
       description: string;
       linkText: string;
@@ -185,6 +218,7 @@ export interface I18nType {
     linkText: string;
   };
   sidebar: {
+    noVersions: string;
     deprecated: string;
     noResultsProduct: string;
   };
@@ -248,6 +282,8 @@ export interface I18nType {
     refreshSecret: string;
     delete: string;
     cancel: string;
+    searchPlaceholder: string;
+    noSearchResults: string;
     noApp: string;
     create: string;
     getStarted: string;

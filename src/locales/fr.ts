@@ -1,4 +1,6 @@
 import { I18nType } from './i18n-type'
+import { translationNeeded } from '@/locales/index'
+import { en } from '@/locales/en'
 
 export const fr: I18nType = {
   login: {
@@ -37,7 +39,10 @@ export const fr: I18nType = {
   },
   productVersion: {
     deprecatedWarningProduct: 'Cette version du produit est maintenant obsolète. Les points d\'accès resteront entièrement utilisables jusqu\'à la fin de cette version.',
-    unableToRetrieveDoc: 'Impossible de récupérer la documentation'
+    unableToRetrieveDoc: 'Impossible de récupérer la documentation',
+    noProductVersionsDetail: 'Cette application n\'est reliée à aucune version produit',
+    noProductVersionsTitle: 'Aucune version de produit',
+    registerProductVersion: 'Enregistrer une version de produit'
   },
   userDropdown: {
     myApps: 'Mes Applications',
@@ -121,6 +126,32 @@ export const fr: I18nType = {
     headerDescription3: 'affiché qu\'une seule fois.',
     headerDescription4: 'Veuillez copier cette valeur et la conserver dans vos archives.'
   },
+  analytics: {
+    filterLabelProductVersions: translationNeeded(en.analytics.filterLabelProductVersions),
+    chartOverview: translationNeeded(en.analytics.chartOverview),
+    chartTitleRequests: 'Requêtes par version de produit',
+    chartTitleLatency: 'Latence P99 par version de produit',
+    chartTitle4xxProductVersion: '4xx par version de produit',
+    chartTitle5xxProductVersion: '5xx par version de produit',
+    chartTitle4xxStatusCode: '4xx par Status Code',
+    chartTitle5xxStatusCode: '5xx par Status Code',
+    dashboard: 'Tableau de bord',
+    resultsLimited: translationNeeded(en.analytics.resultsLimited),
+    notAvailable: 'Indisponible',
+    sectionCurrent: 'Courant',
+    sectionLast: 'Dernier',
+    sectionPrevious: 'Précédent',
+    selectDateRange: 'Sélectionnez une plage de dates',
+    selectProductVersions: translationNeeded(en.analytics.selectProductVersions),
+    summary: 'Résumé',
+    summary24Hours: '24 Heures',
+    summary30Days: '30 Jours',
+    summaryTooltip: (timespan: string) => translationNeeded(en.analytics.summaryTooltip(timespan)),
+    timeRange: translationNeeded(en.analytics.timeRange),
+    totalRequests: 'Total requêtes',
+    unableToFetch: (itemName: string) => translationNeeded(en.analytics.unableToFetch(itemName)),
+    viewAnalytics: translationNeeded(en.analytics.viewAnalytics)
+  },
   productList: {
     titleProducts: 'Produits',
     actions: {
@@ -152,6 +183,8 @@ export const fr: I18nType = {
   },
   applicationRegistration: {
     noAvailableApplications: 'Vous n\'avez actuellement aucune application à enregistrer.',
+    noFoundApplications: translationNeeded(en.applicationRegistration.noFoundApplications),
+    searchPlaceholder: translationNeeded(en.applicationRegistration.searchPlaceholder),
     noApplications: 'Aucune application',
     selectApplication: 'Sélectionner une application',
     createNewApplication: 'Créer une nouvelle application +',
@@ -175,6 +208,8 @@ export const fr: I18nType = {
     isEmail: 'L\'adresse e-mail doit être valide'
   },
   apiDocumentation: {
+    emptyTitle: 'Pas de documentation',
+    emptyMessage: 'Ce produit n\'as pas encore de documentation. Contactez l\'administrateur du Portail développeur si cela n\'est pas le résultat attendu.',
     error: {
       description: 'Une erreur inattendue s\'est produite lors du chargement du document demandé. Veuillez réessayer ultérieurement.',
       linkText: 'Retourner à la page d\'accueil →'
@@ -187,6 +222,7 @@ export const fr: I18nType = {
     linkText: 'Retour à la page d\'accueil →'
   },
   sidebar: {
+    noVersions: 'Ce produit n\'a pas de version produit publié',
     deprecated: ' (Obsolète)',
     noResultsProduct: 'Aucune version de produit'
   },
@@ -248,6 +284,8 @@ export const fr: I18nType = {
     plus: 'Plus',
     myApps: 'Mes applications',
     refreshSecret: 'Actualiser le secret',
+    noSearchResults: translationNeeded(en.myApp.noSearchResults),
+    searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Supprimer',
     cancel: 'Annuler',
     noApp: 'Aucune application',

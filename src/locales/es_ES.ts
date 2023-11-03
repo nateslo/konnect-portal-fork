@@ -1,4 +1,6 @@
 import { I18nType } from './i18n-type'
+import { translationNeeded } from '@/locales/index'
+import { en } from '@/locales/en'
 
 export const es_ES: I18nType = {
   login: {
@@ -37,7 +39,10 @@ export const es_ES: I18nType = {
   },
   productVersion: {
     deprecatedWarningProduct: 'Esta versión del producto está obsoleta. La interfaz seguirá siendo totalmente utilizable hasta que esta versión se elimine.',
-    unableToRetrieveDoc: 'No se puede recuperar la documentación'
+    unableToRetrieveDoc: 'No se puede recuperar la documentación',
+    noProductVersionsDetail: translationNeeded(en.productVersion.noProductVersionsDetail),
+    noProductVersionsTitle: translationNeeded(en.productVersion.noProductVersionsTitle),
+    registerProductVersion: translationNeeded(en.productVersion.registerProductVersion)
   },
   userDropdown: {
     myApps: 'Mis aplicaciones',
@@ -121,6 +126,32 @@ export const es_ES: I18nType = {
     headerDescription3: 'mostrada solamente una vez.',
     headerDescription4: 'Por favor, asegúrate de copiar este valor y guardarlo en un lugar seguro.'
   },
+  analytics: {
+    filterLabelProductVersions: translationNeeded(en.analytics.filterLabelProductVersions),
+    chartOverview: translationNeeded(en.analytics.chartOverview),
+    chartTitleRequests: translationNeeded(en.analytics.chartTitleRequests),
+    chartTitleLatency: translationNeeded(en.analytics.chartTitleLatency),
+    chartTitle4xxProductVersion: translationNeeded(en.analytics.chartTitle4xxProductVersion),
+    chartTitle5xxProductVersion: translationNeeded(en.analytics.chartTitle5xxProductVersion),
+    chartTitle4xxStatusCode: translationNeeded(en.analytics.chartTitle4xxStatusCode),
+    chartTitle5xxStatusCode: translationNeeded(en.analytics.chartTitle5xxStatusCode),
+    dashboard: translationNeeded(en.analytics.dashboard),
+    resultsLimited: translationNeeded(en.analytics.resultsLimited),
+    notAvailable: translationNeeded(en.analytics.notAvailable),
+    sectionCurrent: translationNeeded(en.analytics.sectionCurrent),
+    sectionLast: translationNeeded(en.analytics.sectionLast),
+    sectionPrevious: translationNeeded(en.analytics.sectionPrevious),
+    selectDateRange: translationNeeded(en.analytics.selectDateRange),
+    selectProductVersions: translationNeeded(en.analytics.selectProductVersions),
+    summary: translationNeeded(en.analytics.summary),
+    summary24Hours: translationNeeded(en.analytics.summary24Hours),
+    summary30Days: translationNeeded(en.analytics.summary30Days),
+    summaryTooltip: (timespan: string) => translationNeeded(en.analytics.summaryTooltip(timespan)),
+    timeRange: translationNeeded(en.analytics.timeRange),
+    totalRequests: translationNeeded(en.analytics.totalRequests),
+    unableToFetch: (itemName: string) => translationNeeded(en.analytics.unableToFetch(itemName)),
+    viewAnalytics: translationNeeded(en.analytics.viewAnalytics)
+  },
   productList: {
     titleProducts: 'Productos',
     actions: {
@@ -152,6 +183,8 @@ export const es_ES: I18nType = {
   },
   applicationRegistration: {
     noAvailableApplications: 'Actualmente no hay aplicaciones disponibles para registrarse.',
+    noFoundApplications: translationNeeded(en.applicationRegistration.noFoundApplications),
+    searchPlaceholder: translationNeeded(en.applicationRegistration.searchPlaceholder),
     noApplications: 'No hay aplicaciones',
     selectApplication: 'Seleccionar aplicación',
     createNewApplication: 'Crear aplicación nueva +',
@@ -175,6 +208,8 @@ export const es_ES: I18nType = {
     isEmail: 'El correo electrónico debe ser una dirección de correo electrónico válida'
   },
   apiDocumentation: {
+    emptyTitle: translationNeeded(en.apiDocumentation.emptyTitle),
+    emptyMessage: translationNeeded(en.apiDocumentation.emptyMessage),
     error: {
       description: 'Ocurrió un error inesperado al intentar cargar el documento. Por favor, inténtalo de nuevo más tarde',
       linkText: 'Regresar al inicio →'
@@ -187,6 +222,7 @@ export const es_ES: I18nType = {
     linkText: 'Regresar al inicio →'
   },
   sidebar: {
+    noVersions: translationNeeded(en.sidebar.noVersions),
     deprecated: ' (Obsoleto)',
     noResultsProduct: 'No hay versiones del producto'
   },
@@ -248,6 +284,8 @@ export const es_ES: I18nType = {
     plus: 'Plus',
     myApps: 'Mis aplicaciones',
     refreshSecret: 'Refrescar clave secreta',
+    noSearchResults: translationNeeded(en.myApp.noSearchResults),
+    searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Eliminar',
     cancel: 'Cancelar',
     noApp: 'No hay aplicaciones',

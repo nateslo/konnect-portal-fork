@@ -1,9 +1,9 @@
 <template>
   <div
     :ref="specDetails"
-    :class="{ spec: true, 'mt-6': true, 'api-documentation': true }"
+    class="spec mt-6 api-documentation"
   >
-    <div class="container mx-auto max-w-screen-2xl px-5 md:px-0">
+    <div class="container max-w-screen-2xl px-5 md:px-0">
       <div class="swagger-ui has-sidebar breadcrumbs">
         <KBreadcrumbs :items="breadcrumbs" />
       </div>
@@ -42,7 +42,7 @@
       :has-sidebar="false"
       :application-registration-enabled="applicationRegistrationEnabled"
       :active-operation="sidebarActiveOperationListItem"
-      :current-version="currentVersion.name"
+      :current-version="currentVersion?.name"
       @clicked-view-spec="triggerViewSpecModal"
       @clicked-register="triggerViewSpecRegistrationModal"
     />
@@ -78,7 +78,7 @@ import { useI18nStore, useAppStore, usePermissionsStore, useProductStore } from 
 import { OperationListItem, SpecDetails } from '@kong-ui-public/spec-renderer'
 import { idFromPathMethod } from '@/helpers/generatedOperationId'
 import '@kong-ui-public/spec-renderer/dist/style.css'
-import { ProductVersionSpec } from '@kong/sdk-portal-js'
+import { ProductVersionSpecDocument } from '@kong/sdk-portal-js'
 
 export default defineComponent({
   name: 'Spec',
@@ -170,7 +170,7 @@ export default defineComponent({
 
       await processProduct()
       await loadSwagger().then(() => {
-        if (sidebarOperations.value.length) {
+        if (sidebarOperations.value?.length) {
           // this means that user initially routed to a spec - check if
           // hash is present in route, if it is, we scroll to it
           const routeHash = $router.currentRoute.value?.hash
@@ -328,7 +328,7 @@ export default defineComponent({
         .then(async res => {
           // no content
           if (res.status === 204) {
-            res.data = {} as ProductVersionSpec
+            res.data = {} as ProductVersionSpecDocument
 
             return res
           }
@@ -447,6 +447,9 @@ export default defineComponent({
         } catch (e) {
           console.error(e)
         }
+      } else {
+        // We want a 404 in the case that there is no product version spec
+        spec.value = { statusCode: 404 }
       }
     }
 

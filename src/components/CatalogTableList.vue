@@ -6,6 +6,7 @@
       has-side-border
       :headers="tableHeaders"
       is-small
+      :is-loading="loading"
       is-clickable
       disable-pagination
       @row:click="handleRowClick"
@@ -27,6 +28,7 @@
       </template>
       <template #links="{ row }">
         <router-link
+          v-if="row.showSpecLink"
           :to="{ name: 'spec', params: { product: row.id } }"
           class="link"
         >
@@ -55,6 +57,10 @@ export default defineComponent({
     products: {
       type: Array as PropType<CatalogItemModel[]>,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   setup (props) {
