@@ -34,6 +34,7 @@
             @click="(e) => { toggle(e); item.onClick?.() }"
           >
             {{ item.label }}
+            {{ item.testid }}
           </router-link>
           <div
             v-else
