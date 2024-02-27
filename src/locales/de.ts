@@ -44,6 +44,18 @@ export const de: I18nType = {
     noProductVersionsTitle: translationNeeded(en.productVersion.noProductVersionsTitle),
     registerProductVersion: translationNeeded(en.productVersion.registerProductVersion)
   },
+  authStrategyInfo: {
+    titleLabel: translationNeeded(en.authStrategyInfo.titleLabel),
+    credentialTypeLabel: translationNeeded(en.authStrategyInfo.credentialTypeLabel),
+    registerBtnText: (productVersionName: string) => translationNeeded(en.authStrategyInfo.registerBtnText(productVersionName)),
+    authMethods: translationNeeded(en.authStrategyInfo.authMethods),
+    keyNames: translationNeeded(en.authStrategyInfo.keyNames),
+    bearer: translationNeeded(en.authStrategyInfo.bearer),
+    keyAuth: translationNeeded(en.authStrategyInfo.keyAuth),
+    clientCredentials: translationNeeded(en.authStrategyInfo.clientCredentials),
+    selfManagedClientCredentials: translationNeeded(en.authStrategyInfo.selfManagedClientCredentials),
+    session: translationNeeded(en.authStrategyInfo.session)
+  },
   userDropdown: {
     myApps: 'Meine Applikationen',
     logout: 'Abmelden'
@@ -103,6 +115,8 @@ export const de: I18nType = {
     delete: 'Löschen',
     proceed: 'Weiter',
     applicationName: 'Name der Applikation',
+    authStrategy: translationNeeded(en.application.authStrategy),
+    authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
     clientID: translationNeeded(en.application.clientID),
     clientSecret: translationNeeded(en.application.clientSecret),
     reqField: ' Pflichtfeld',
@@ -154,6 +168,7 @@ export const de: I18nType = {
   },
   productList: {
     titleProducts: 'Produkte',
+    showMoreLabel: (items: string) => translationNeeded(en.productList.showMoreLabel(items)),
     actions: {
       unregister: 'Registrierung aufheben'
     },
@@ -166,6 +181,7 @@ export const de: I18nType = {
       nameProduct: 'Produkt',
       version: 'Version',
       status: 'Status',
+      scopes: translationNeeded(en.productList.labels.scopes),
       actions: 'Aktionen'
     }
   },
@@ -185,6 +201,9 @@ export const de: I18nType = {
     noAvailableApplications: 'Aktuell haben Sie noch keine Applikationen registriert.',
     noFoundApplications: translationNeeded(en.applicationRegistration.noFoundApplications),
     searchPlaceholder: translationNeeded(en.applicationRegistration.searchPlaceholder),
+    filterScopes: translationNeeded(en.applicationRegistration.filterScopes),
+    availableScopesLabel: translationNeeded(en.applicationRegistration.availableScopesLabel),
+    fetchingScopesLabel: translationNeeded(en.applicationRegistration.fetchingScopesLabel),
     noApplications: 'Keine Applikationen',
     selectApplication: 'Applikation auswählen',
     createNewApplication: 'Neue Applikation anlegen +',
@@ -280,6 +299,7 @@ export const de: I18nType = {
     logoAlt: 'Logo'
   },
   myApp: {
+    authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
     newApp: 'Neue Applikation',
     plus: 'Plus',
     myApps: 'Meine Applikationen',

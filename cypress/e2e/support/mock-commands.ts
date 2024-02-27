@@ -7,9 +7,10 @@ import document from '../fixtures/dochub_mocks/document.json'
 import documentTreeJson from '../fixtures/dochub_mocks/documentTree.json'
 import apiDocumentationJson from '../fixtures/dochub_mocks/parentApiDocumentation.json'
 import petstoreOperationsV2 from '../fixtures/v2/petstoreOperations.json'
-import { 
+import {
   GetApplicationResponse,
   ListApplicationsResponse,
+  ListAuthStrategiesResponse,
   ListCredentialsResponse,
   ListDocumentsTree,
   ListRegistrationsResponse,
@@ -18,11 +19,12 @@ import {
   Product,
   ProductDocument,
   ProductDocumentRaw,
+  ProductVersion,
   ProductVersionListPage,
   ProductVersionSpecDocument,
   ProductVersionSpecOperations,
   ProductVersionSpecOperationsOperationsInner,
-  SearchResults 
+  SearchResults
 } from '@kong/sdk-portal-js'
 import { THEMES } from '../fixtures/theme.constant'
 
@@ -68,6 +70,7 @@ Cypress.Commands.add('mockAppearance', (appearance = {}) => {
       }
     }
   }
+
   cy.mockLogo()
   cy.mockCatalogCover()
 
@@ -274,11 +277,11 @@ Cypress.Commands.add('mockProduct', (productId = '*', mockProduct = product, moc
     }
   }
 
-  cy.intercept('GET', `**/api/v2/products/${productId}/versions*`, {
+  cy.intercept('GET', `**/api/v2/products/${productId}/versions**`, {
     statusCode: 200,
     delay: 100,
     body: versionsResponse
-  })
+  }).as('getProductVersions')
 
   const productResponse: Product = {
     ...mockProduct
@@ -329,6 +332,24 @@ Cypress.Commands.add('mockApplications', (applications, totalCount, pageSize = 1
   return cy.intercept('GET', '**/api/v2/applications*', {
     body: responseBody
   }).as('getApplications')
+})
+
+Cypress.Commands.add('mockApplicationAuthStrategies', (applicationAuthStrategies, totalCount, pageSize = 1, pageNumber = 10) => {
+  const responseBody: ListAuthStrategiesResponse = {
+    data: applicationAuthStrategies,
+    meta: {
+      page: {
+        total: totalCount,
+        number: pageNumber,
+        size: pageSize
+
+      }
+    }
+  }
+
+  return cy.intercept('GET', '**/api/v2/applications/auth-strategies*', {
+    body: responseBody
+  }).as('getApplicationAuthStrategies')
 })
 
 Cypress.Commands.add('mockRegistrations', (applicationId = '*', registrations = [], pageNumber = 1, pageSize = 10, totalCount = 0) => {
@@ -417,6 +438,23 @@ Cypress.Commands.add('mockProductVersionApplicationRegistration', (version, conf
         ...config
       }
     }).as('getProductVersionApplicationRegistration')
+})
+
+Cypress.Commands.add('mockGrantedScopes', (versionId, applicationId, scopes = []) => {
+  return cy.intercept(
+    'GET',
+    `**/api/v2/applications/${applicationId}/product-versions/${versionId}/granted-scopes`, {
+      body: {
+        scopes,
+        meta: {
+          page: {
+            number: 1,
+            size: 10,
+            total: 0
+          }
+        }
+      }
+    }).as('getGrantedScopes')
 })
 
 Cypress.Commands.add('mockProductVersionAvailableRegistrations', (productId, versionId, apps) => {
@@ -535,6 +573,18 @@ Cypress.Commands.add('mockGetProductDocumentTree', (productId) => {
   ).as('ProductDocumentTree')
 })
 
+Cypress.Commands.add('mockProductVersion', (productId = '*', versionId = '*', version = versions[0]) => {
+  const versionResponse: ProductVersion = {
+    ...version
+  }
+
+  cy.intercept('get', `**/api/v2/products/${productId}/versions/${versionId}`, {
+    statusCode: 200,
+    delay: 100,
+    body: versionResponse
+  }).as('productVersion')
+})
+
 Cypress.Commands.add('mockProductVersionSpec', (productId = '*', versionId = '*', content = JSON.stringify(petstoreJson30)) => {
   const specResponse: ProductVersionSpecDocument = {
     api_type: 'openapi',
@@ -549,7 +599,7 @@ Cypress.Commands.add('mockProductVersionSpec', (productId = '*', versionId = '*'
 Cypress.Commands.add('mockProductOperations', (productId = '*', versionId = '*', operations = petstoreOperationsV2.operations as ProductVersionSpecOperationsOperationsInner[]) => {
   const operationsResponse: ProductVersionSpecOperations = {
     api_type: 'openapi',
-    operations: operations
+    operations
   }
 
   cy.intercept('get', `**/api/v2/products/${productId}/versions/${versionId}/spec/operations`, {

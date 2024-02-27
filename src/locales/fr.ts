@@ -44,6 +44,18 @@ export const fr: I18nType = {
     noProductVersionsTitle: 'Aucune version de produit',
     registerProductVersion: 'Enregistrer une version de produit'
   },
+  authStrategyInfo: {
+    titleLabel: translationNeeded(en.authStrategyInfo.titleLabel),
+    credentialTypeLabel: translationNeeded(en.authStrategyInfo.credentialTypeLabel),
+    registerBtnText: (productVersionName: string) => translationNeeded(en.authStrategyInfo.registerBtnText(productVersionName)),
+    authMethods: translationNeeded(en.authStrategyInfo.authMethods),
+    keyNames: translationNeeded(en.authStrategyInfo.keyNames),
+    bearer: translationNeeded(en.authStrategyInfo.bearer),
+    keyAuth: translationNeeded(en.authStrategyInfo.keyAuth),
+    clientCredentials: translationNeeded(en.authStrategyInfo.clientCredentials),
+    selfManagedClientCredentials: translationNeeded(en.authStrategyInfo.selfManagedClientCredentials),
+    session: translationNeeded(en.authStrategyInfo.session)
+  },
   userDropdown: {
     myApps: 'Mes Applications',
     logout: 'Déconnexion'
@@ -103,6 +115,8 @@ export const fr: I18nType = {
     delete: 'Supprimer',
     proceed: 'Continuer',
     applicationName: 'Nom de l\'application ',
+    authStrategy: translationNeeded(en.application.authStrategy),
+    authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
     clientID: 'Client ID : ',
     clientSecret: 'Client Secret : ',
     reqField: ' indique un champ obligatoire',
@@ -154,6 +168,7 @@ export const fr: I18nType = {
   },
   productList: {
     titleProducts: 'Produits',
+    showMoreLabel: (items: string) => translationNeeded(en.productList.showMoreLabel(items)),
     actions: {
       unregister: 'Désenregistrer'
     },
@@ -166,6 +181,7 @@ export const fr: I18nType = {
       nameProduct: 'Produit',
       version: 'Version',
       status: 'Statut',
+      scopes: translationNeeded(en.productList.labels.scopes),
       actions: 'Actions'
     }
   },
@@ -185,6 +201,9 @@ export const fr: I18nType = {
     noAvailableApplications: 'Vous n\'avez actuellement aucune application à enregistrer.',
     noFoundApplications: translationNeeded(en.applicationRegistration.noFoundApplications),
     searchPlaceholder: translationNeeded(en.applicationRegistration.searchPlaceholder),
+    filterScopes: translationNeeded(en.applicationRegistration.filterScopes),
+    availableScopesLabel: translationNeeded(en.applicationRegistration.availableScopesLabel),
+    fetchingScopesLabel: translationNeeded(en.applicationRegistration.fetchingScopesLabel),
     noApplications: 'Aucune application',
     selectApplication: 'Sélectionner une application',
     createNewApplication: 'Créer une nouvelle application +',
@@ -280,6 +299,7 @@ export const fr: I18nType = {
     logoAlt: 'logo'
   },
   myApp: {
+    authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
     newApp: 'Nouvelle application',
     plus: 'Plus',
     myApps: 'Mes applications',

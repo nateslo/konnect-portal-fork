@@ -40,6 +40,18 @@ export const en = {
     noProductVersionsTitle: 'No Product Versions',
     registerProductVersion: 'Register Product version'
   },
+  authStrategyInfo: {
+    titleLabel: 'Supported Application Auth Strategy:',
+    credentialTypeLabel: 'Credential Type:',
+    registerBtnText: (productVersionName: string) => `Register for ${productVersionName}`,
+    authMethods: 'Auth Methods:',
+    keyNames: 'Key Names:',
+    bearer: 'Bearer',
+    keyAuth: 'Key Auth',
+    clientCredentials: 'Client Credentials',
+    selfManagedClientCredentials: 'Self Managed Client Credentials',
+    session: 'Session'
+  },
   userDropdown: {
     myApps: 'My Apps',
     logout: 'Logout'
@@ -99,6 +111,8 @@ export const en = {
     delete: 'Delete',
     proceed: 'Proceed',
     applicationName: 'Application Name ',
+    authStrategy: 'Auth Strategy',
+    authStrategyWarning: 'You cannot create an application as this developer portal has no available application auth strategies. Please contact a developer portal admin.',
     clientID: 'Client ID: ',
     clientSecret: 'Client Secret: ',
     reqField: ' indicates required field',
@@ -150,6 +164,7 @@ export const en = {
   },
   productList: {
     titleProducts: 'Products',
+    showMoreLabel: (items: string) => `+ ${items} more`,
     actions: {
       unregister: 'Unregister'
     },
@@ -162,6 +177,7 @@ export const en = {
       nameProduct: 'Product',
       version: 'Version',
       status: 'Status',
+      scopes: 'Scopes',
       actions: 'Actions'
     }
   },
@@ -186,6 +202,9 @@ export const en = {
     createApplication: 'Create an Application',
     searchPlaceholder: 'Search applications',
     cancelButton: 'Cancel',
+    filterScopes: 'filter...',
+    availableScopesLabel: 'Select scopes',
+    fetchingScopesLabel: 'Fetching scopes...',
     registeredApplicationsProduct: 'The following applications are already registered to this product:',
     modalApplicationRegistrationDefault: {
       title: (serviceName: string, productVersion: string) => `Register for ${serviceName} - ${productVersion}`,
@@ -276,6 +295,7 @@ export const en = {
     logoAlt: 'logo'
   },
   myApp: {
+    authStrategyWarning: 'You cannot create an application as this developer portal has no available application auth strategies. Please contact a developer portal admin.',
     newApp: 'New App',
     plus: 'Plus',
     myApps: 'My Apps',

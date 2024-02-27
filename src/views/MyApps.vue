@@ -8,6 +8,7 @@
         <KButton
           data-testid="create-application-button"
           appearance="primary"
+          :disabled="appRegV2Enabled && !hasAppAuthStrategies"
           :is-rounded="false"
           :to="{ name: 'create-application' }"
         >
@@ -31,6 +32,13 @@
         </KButton>
       </template>
     </PageTitle>
+    <KAlert
+      v-if="appRegV2Enabled && !hasAppAuthStrategies && !fetchingAuthStrategies"
+      :alert-message="helpText.authStrategyWarning"
+      appearance="warning"
+      class="no-auth-strategies-warning"
+      data-testid="no-auth-strategies-warning"
+    />
     <div
       v-if="!vitalsLoading && myAppsReady"
     >
@@ -94,7 +102,7 @@
                     {{ helpTextVitals.viewAnalytics }}
                   </div>
                   <div
-                    v-if="isDcr"
+                    v-if="isApplicationDcr(row)"
                     data-testid="dropdown-refresh-application-dcr-token"
                     class="py-2 px-3 type-md cursor-pointer"
                     @click="handleRefreshSecret(row.id)"
@@ -205,6 +213,9 @@ import '@kong-ui-public/analytics-metric-provider/dist/style.css'
 import { EXPLORE_V2_DIMENSIONS, EXPLORE_V2_FILTER_TYPES, MetricsConsumer } from '@kong-ui-public/analytics-metric-provider'
 
 import { storeToRefs } from 'pinia'
+import { FeatureFlags } from '@/constants/feature-flags'
+import useLDFeatureFlag from '@/hooks/useLDFeatureFlag'
+import { GetApplicationResponse, AuthStrategyCredentialType } from '@kong/sdk-portal-js'
 
 export default defineComponent({
   name: 'MyApps',
@@ -221,9 +232,12 @@ export default defineComponent({
     const showSecretModal = ref(false)
     const token = ref(null)
     const { portalApiV2 } = usePortalApi()
+    const appRegV2Enabled = useLDFeatureFlag(FeatureFlags.AppRegV2, false)
+    const hasAppAuthStrategies = ref(false)
+    const fetchingAuthStrategies = ref(true)
 
     const appStore = useAppStore()
-    const { isDcr } = storeToRefs(appStore)
+    const { isDcr: isPortalDcr } = storeToRefs(appStore)
     const helpText = useI18nStore().state.helpText.myApp
     const helpTextVitals = useI18nStore().state.helpText.analytics
     const vitalsLoading = ref(true)
@@ -232,6 +246,14 @@ export default defineComponent({
       paginationPageSizes: [25, 50, 100],
       initialPageSize: 25
     })
+
+    const isApplicationDcr = (application: GetApplicationResponse) => {
+      if (appRegV2Enabled) {
+        return application.auth_strategy?.credential_type === AuthStrategyCredentialType.ClientCredentials
+      }
+
+      return isPortalDcr.value
+    }
 
     const modalTitle = computed(() => `Delete ${deleteItem.value?.name}`)
     const appIds = ref([])
@@ -352,8 +374,26 @@ export default defineComponent({
       ]
     }))
 
-    onMounted(() => {
+    onMounted(async () => {
       vitalsLoading.value = false
+
+      if (appRegV2Enabled) {
+        fetchingAuthStrategies.value = true
+        try {
+          const appAuthStrategies = await portalApiV2.value.service.applicationsApi.listApplicationAuthStrategies()
+          if (appAuthStrategies.data?.data?.length) {
+            hasAppAuthStrategies.value = true
+          }
+
+          fetchingAuthStrategies.value = false
+        } catch (err) {
+          fetchingAuthStrategies.value = false
+          notify({
+            appearance: 'danger',
+            message: `Error fetching application auth strategies: ${err}`
+          })
+        }
+      }
     })
 
     return {
@@ -363,9 +403,12 @@ export default defineComponent({
       currentState,
       tableHeaders,
       handleDelete,
-      isDcr,
+      fetchingAuthStrategies,
+      isApplicationDcr,
       deleteItem,
       showSecretModal,
+      appRegV2Enabled,
+      hasAppAuthStrategies,
       token,
       onModalClose,
       handleRefreshSecret,
@@ -384,9 +427,13 @@ export default defineComponent({
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .delete-modal, .refresh-secret-modal {
   --KModalHeaderColor: var(--text_colors-headings);
   --KModalColor: var(--text_colors-primary);
+}
+
+.no-auth-strategies-warning {
+  margin-bottom: 8px;
 }
 </style>

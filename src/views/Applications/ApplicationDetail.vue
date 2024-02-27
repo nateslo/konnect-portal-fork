@@ -14,6 +14,70 @@
       v-if="currentState.matches('success')"
     >
       <div>
+        <KCard
+          v-if="appRegV2Enabled && application && application.auth_strategy"
+          class="auth-strategy-card"
+          data-testid="auth-strategy-card"
+        >
+          <template #body>
+            <span
+              class="label"
+              data-testid="auth-strategy-title"
+            >
+              {{ helpText.authStrategyInfo.titleLabel }}
+              <KBadge shape="rectangular">
+                {{ application.auth_strategy.name }}
+              </KBadge>
+            </span>
+            <span
+              class="label"
+              data-testid="auth-strategy-credential-type"
+            >
+              {{ helpText.authStrategyInfo.credentialTypeLabel }}
+              <KBadge shape="rectangular">
+                {{ authMethodLabelObj[application.auth_strategy.credential_type] }}
+              </KBadge>
+            </span>
+            <p
+              class="auth-methods-label"
+              :data-testid="application.auth_strategy.credential_type !== 'key_auth' ? 'auth-strategy-auth-methods-label' : 'auth-strategy-key-names-label'"
+            >
+              {{ application.auth_strategy.credential_type !== 'key_auth' ? helpText.authStrategyInfo.authMethods : helpText.authStrategyInfo.keyNames }}
+            </p>
+            <div class="info-container">
+              <KCard
+                v-if="application.auth_strategy.credential_type !== 'key_auth'"
+                class="badge-container"
+              >
+                <template #body>
+                  <KBadge
+                    v-for="(authMethod, index) in application.auth_strategy?.auth_methods"
+                    :key="authMethod + index"
+                    :data-testid="`auth-method-${authMethod}`"
+                    shape="rectangular"
+                  >
+                    {{ authMethodLabelObj[authMethod] }}
+                  </KBadge>
+                </template>
+              </KCard>
+              <KCard
+                v-else
+                class="badge-container"
+              >
+                <template #body>
+                  <KBadge
+                    v-for="(keyName, index) in application.auth_strategy?.key_names"
+                    :key="keyName + index"
+                    :data-testid="`key-name-${keyName}`"
+                    shape="rectangular"
+                  >
+                    {{ keyName }}
+                  </KBadge>
+                </template>
+              </KCard>
+            </div>
+          </template>
+        </KCard>
         <PageTitle
           class="mb-5"
           :title="application.name"
@@ -86,12 +150,12 @@
         <hr class="my-6">
       </div>
       <DcrAuthenticationTable
-        v-if="isDcr"
+        v-if="isApplicationDcr"
         :application="application"
         class="mb-6"
       />
       <CredentialsList
-        v-if="!isDcr"
+        v-if="!isApplicationDcr && !isApplicationOIDC"
         :id="id"
         class="mb-6"
       />
@@ -122,6 +186,9 @@ import {
   TimeframeKeys,
   TimePeriods
 } from '@kong-ui-public/analytics-utilities'
+import { FeatureFlags } from '@/constants/feature-flags'
+import useLDFeatureFlag from '@/hooks/useLDFeatureFlag'
+import { AuthStrategyCredentialType } from '@kong/sdk-portal-js'
 
 export default defineComponent({
   name: 'ApplicationDetail',
@@ -130,9 +197,17 @@ export default defineComponent({
   setup () {
     const errorMessage = ref('')
     const application = ref(null)
+    const appRegV2Enabled = useLDFeatureFlag(FeatureFlags.AppRegV2, false)
 
     const helpText = useI18nStore().state.helpText
     const $route = useRoute()
+    const authMethodLabelObj = {
+      bearer: helpText.authStrategyInfo.bearer,
+      session: helpText.authStrategyInfo.session,
+      client_credentials: helpText.authStrategyInfo.clientCredentials,
+      key_auth: helpText.authStrategyInfo.keyAuth,
+      self_managed_client_credentials: helpText.authStrategyInfo.selfManagedClientCredentials
+    }
     const id = computed(() => $route.params.application_id as string)
     const breadcrumbs = computed(() => ([{
       key: 'my-apps',
@@ -142,7 +217,7 @@ export default defineComponent({
 
     const { portalApiV2 } = usePortalApi()
     const appStore = useAppStore()
-    const { isDcr, allowedTimePeriod } = storeToRefs(appStore)
+    const { isDcr: isPortalDcr, allowedTimePeriod } = storeToRefs(appStore)
     const vitalsLoading = ref(false)
     const fixedTimeframe = allowedTimePeriod.value === PortalTimeframeKeys.NINETY_DAYS
       ? ref(TimePeriods.get(TimeframeKeys.THIRTY_DAY) as Timeframe)
@@ -159,6 +234,23 @@ export default defineComponent({
         error: { on: { FETCH: 'pending' } }
       }
     }))
+
+    const isApplicationOIDC = computed(() => {
+      return application.value.auth_strategy?.credential_type === AuthStrategyCredentialType.SelfManagedClientCredentials
+    })
+
+    const isApplicationDcr = computed(() => {
+      if (appRegV2Enabled && application.value) {
+        // check the application type
+        if (application.value.auth_strategy?.credential_type === AuthStrategyCredentialType.ClientCredentials) {
+          return true
+        } else {
+          return false
+        }
+      }
+
+      return isPortalDcr.value
+    })
 
     const analyticsCardTitle = allowedTimePeriod.value === PortalTimeframeKeys.NINETY_DAYS
       ? `${helpText.analytics.summary30Days} ${helpText.analytics.summary}`
@@ -183,6 +275,8 @@ export default defineComponent({
     })
 
     return {
+      appRegV2Enabled,
+      authMethodLabelObj,
       analyticsCardTitle,
       currentState,
       errorMessage,
@@ -190,10 +284,48 @@ export default defineComponent({
       helpText,
       id,
       breadcrumbs,
-      isDcr,
+      isApplicationDcr,
+      isApplicationOIDC,
       fixedTimeframe,
       vitalsLoading
     }
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  .auth-strategy-card {
+    --KCardBorder: 1px solid var(--section_colors-stroke);
+    --KCardBorderRadius: 4px;
+    --KCardPaddingX: 12px;
+    --KCardPaddingY: 12px;
+    margin-bottom: 12px;
+
+    .label {
+      &:not(:last-of-type) {
+        margin-right: 12px;
+      }
+    }
+
+    .label, .auth-methods-label {
+      margin-bottom: 4px;
+    }
+
+    .info-container {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      row-gap: 8px;
+    }
+
+    :deep(.k-badge) {
+      &:not(:last-child) {
+        margin-right: 4px;
+      }
+      background: var(--button_colors-primary-fill, var(--blue-500, #1155cb));
+      border: 1px solid transparent;
+      color: var(--button_colors-primary-text, #fff);
+    }
+  }
+</style>

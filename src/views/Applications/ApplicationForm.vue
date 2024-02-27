@@ -15,6 +15,13 @@
         <p class="text-sm mb-5">
           <span class="text-danger">*</span> {{ helpText.application.reqField }}
         </p>
+        <KAlert
+          v-if="appRegV2Enabled && !hasAppAuthStrategies && !fetchingAuthStrategies && formMode === 'create'"
+          :alert-message="helpText.application.authStrategyWarning"
+          appearance="warning"
+          class="no-auth-strategies-warning"
+          data-testid="no-auth-strategies-warning"
+        />
         <form @submit.prevent="formMethod">
           <div class="mb-5">
             <KLabel for="applicationName">
@@ -29,7 +36,26 @@
             />
           </div>
           <div
-            v-if="isDcr"
+            v-if="appAuthStrategies.length > 1"
+            class="mb-5"
+          >
+            <KLabel
+              for="authStrat"
+            >
+              {{ helpText.application.authStrategy }} <span class="text-danger">*</span>
+            </KLabel>
+            <KSelect
+              id="authStrat"
+              :items="appAuthStrategies"
+              :disabled="formMode === 'edit'"
+              data-testid="application-auth-strategy-select"
+              appearance="select"
+              width="100%"
+              @change="onChangeAuthStrategy"
+            />
+          </div>
+          <div
+            v-if="(!appRegV2Enabled && isDcr) || (appRegV2Enabled && appIsDcr) || (appRegV2Enabled && appIsSelfManaged)"
             class="mb-5"
           >
             <KLabel for="redirectUri">
@@ -43,7 +69,7 @@
             />
           </div>
           <div
-            v-else
+            v-if="(!appRegV2Enabled && !isDcr) || (appRegV2Enabled && !appIsDcr)"
             class="mb-5"
           >
             <KLabel for="referenceId">
@@ -206,20 +232,25 @@ import usePortalApi from '@/hooks/usePortalApi'
 import cleanupEmptyFields from '@/helpers/cleanupEmptyFields'
 import useToaster from '@/composables/useToaster'
 import { useI18nStore, useAppStore } from '@/stores'
-import { CreateApplicationPayload, UpdateApplicationPayload } from '@kong/sdk-portal-js'
+import { CreateApplicationPayload, ListAuthStrategiesItem } from '@kong/sdk-portal-js'
+import { FeatureFlags } from '@/constants/feature-flags'
+import useLDFeatureFlag from '@/hooks/useLDFeatureFlag'
+import { fetchAll } from '@/helpers/fetchAll'
 
 export default defineComponent({
   name: 'ApplicationForm',
   components: { PageTitle, CopyButton },
 
   setup () {
-    function makeDefaultFormData (isDcr:boolean): UpdateApplicationPayload {
+    function makeDefaultFormData (isDcr:boolean): CreateApplicationPayload {
       const returnObject = {
         name: '',
         description: '',
         redirect_uri: '',
-        reference_id: ''
+        reference_id: '',
+        auth_strategy_id: ''
       }
+      // TODO: rem
       if (isDcr) {
         delete returnObject.reference_id
       } else {
@@ -231,14 +262,21 @@ export default defineComponent({
 
     const helpText = useI18nStore().state.helpText
     const appStore = useAppStore()
-    const { isDcr } = storeToRefs(appStore)
+    const { isDcr } = storeToRefs(appStore) // TODO: remove with AppRegV2 use appIsDcr instead
     const errorMessage = ref('')
     const clientSecret = ref('')
     const clientId = ref('')
     const applicationId = ref('')
+    const applicationName = ref('')
     const secretModalIsVisible = ref(false)
+    const appRegV2Enabled = useLDFeatureFlag(FeatureFlags.AppRegV2, false)
+    const appAuthStrategies = ref([])
+    const appIsDcr = ref(false)
+    const appIsSelfManaged = ref(false)
+    const hasAppAuthStrategies = ref(false)
+    const fetchingAuthStrategies = ref(true)
 
-    const defaultFormData: UpdateApplicationPayload = makeDefaultFormData(isDcr.value)
+    const defaultFormData: CreateApplicationPayload = makeDefaultFormData(isDcr.value)
     const formData = ref(defaultFormData)
 
     const { notify } = useToaster()
@@ -273,7 +311,11 @@ export default defineComponent({
       () =>
         !currentState.value.matches('pending') &&
         formData.value.name.length &&
-        (isDcr.value ? true : formData.value.reference_id?.length)
+        (appRegV2Enabled && formMode.value !== 'edit' ? hasAppAuthStrategies.value : true) &&
+        (appRegV2Enabled
+          ? (appIsDcr.value || formData.value.reference_id?.length)
+          : (isDcr.value || formData.value.reference_id?.length)
+        )
     )
     const modalTitle = computed(() => `Delete ${formData.value?.name}`)
     const id = computed(() => $route.params.application_id as string)
@@ -290,9 +332,53 @@ export default defineComponent({
 
     const { portalApiV2 } = usePortalApi()
 
-    onMounted(() => {
+    onMounted(async () => {
+      const promises = []
       if (id.value) {
-        fetchApplication()
+        promises.push(fetchApplication())
+      } else {
+        // placeholder to make destructuring result work
+        promises.push('_')
+      }
+
+      if (appRegV2Enabled) {
+        fetchingAuthStrategies.value = true
+        promises.push(fetchAll(meta => portalApiV2.value.service.applicationsApi.listApplicationAuthStrategies(meta)))
+
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const [_, rawAuthStrategies] = await Promise.all(promises)
+          if (rawAuthStrategies.length) {
+            hasAppAuthStrategies.value = true
+            appAuthStrategies.value = rawAuthStrategies.map((strat: ListAuthStrategiesItem) => ({
+              label: strat.name,
+              value: strat.id,
+              isDcr: strat.credential_type === 'client_credentials',
+              isSelfManaged: strat.credential_type === 'self_managed_client_credentials',
+              selected: formData.value.auth_strategy_id ? strat.id === formData.value.auth_strategy_id : (strat.id === $route.query.auth_strategy_id || false)
+            }))
+          }
+
+          const selected = rawAuthStrategies.length === 1
+            ? appAuthStrategies.value[0]
+            : appAuthStrategies.value.find((authStrat) => authStrat.selected === true)
+
+          if (selected) {
+            formData.value.auth_strategy_id = selected.value
+            appIsDcr.value = selected.isDcr
+            appIsSelfManaged.value = selected.isSelfManaged
+          }
+
+          fetchingAuthStrategies.value = false
+        } catch (err) {
+          fetchingAuthStrategies.value = false
+          notify({
+            appearance: 'danger',
+            message: `Error fetching application auth strategies: ${err}`
+          })
+        }
+      } else {
+        await Promise.all(promises)
       }
     })
 
@@ -309,18 +395,38 @@ export default defineComponent({
       })
     }
 
+    const onChangeAuthStrategy = (event) => {
+      const selected = appAuthStrategies.value.find((authStrat) => authStrat.value === event.value)
+      if (!selected) {
+        return
+      }
+
+      formData.value.auth_strategy_id = selected.value
+      appIsDcr.value = selected.isDcr
+      appIsSelfManaged.value = selected.isSelfManaged
+    }
+
     const handleSubmit = () => {
       send('CLICKED_SUBMIT')
       errorMessage.value = ''
+
+      if (appRegV2Enabled) {
+        if (appIsDcr.value) {
+          delete formData.value.reference_id
+        } else {
+          delete formData.value.redirect_uri
+        }
+      }
 
       portalApiV2.value.service.applicationsApi
         .createApplication({
           createApplicationPayload: cleanupEmptyFields(formData.value) as CreateApplicationPayload
         })
         .then((res) => {
-          if (isDcr.value) {
+          if ((!appRegV2Enabled && isDcr.value) || (appRegV2Enabled && appIsDcr.value)) {
             secretModalIsVisible.value = true
             applicationId.value = res.data.id
+            applicationName.value = res.data.name
             clientId.value = res.data.credentials?.client_id
             clientSecret.value = res.data.credentials?.client_secret
           } else {
@@ -334,6 +440,7 @@ export default defineComponent({
       send('CLICKED_SUBMIT')
       errorMessage.value = ''
 
+      delete formData.value.auth_strategy_id
       portalApiV2.value.service.applicationsApi
         .updateApplication({
           applicationId: id.value,
@@ -351,9 +458,10 @@ export default defineComponent({
         .catch((error) => handleError(error))
     }
 
-    const fetchApplication = () => {
+    const fetchApplication = async () => {
       send('FETCH')
-      portalApiV2.value.service.applicationsApi
+
+      return portalApiV2.value.service.applicationsApi
         .getApplication({ applicationId: id.value })
         .then((res) => {
           send('RESOLVE')
@@ -363,7 +471,8 @@ export default defineComponent({
             name: res.data.name,
             description: res.data.description || '',
             redirect_uri: res.data.redirect_uri,
-            reference_id: res.data.reference_id
+            reference_id: res.data.reference_id,
+            auth_strategy_id: res.data.auth_strategy?.id
           }
           if (isDcr.value) {
             delete newFormData.reference_id
@@ -380,7 +489,7 @@ export default defineComponent({
       send('CLICKED_CANCEL')
       secretModalIsVisible.value = false
 
-      handleSuccess(applicationId.value, '', 'created')
+      handleSuccess(applicationId.value, applicationName.value, 'created')
     }
 
     const getRedirectRoute = (id: string, name: string) => {
@@ -455,8 +564,11 @@ export default defineComponent({
       clientSecret,
       clientId,
       copyTokenToClipboard,
+      fetchingAuthStrategies,
       secretModalIsVisible,
       handleAcknowledgeSecret,
+      hasAppAuthStrategies,
+      appRegV2Enabled,
       send,
       buttonText,
       formMode,
@@ -464,7 +576,11 @@ export default defineComponent({
       handleDelete,
       handleCancel,
       generateReferenceId,
-      helpText
+      helpText,
+      appAuthStrategies,
+      onChangeAuthStrategy,
+      appIsDcr,
+      appIsSelfManaged
     }
   }
 })
@@ -487,5 +603,9 @@ export default defineComponent({
   height: 36px;
   top: 4px;
   margin-left: 16px;
+}
+
+.no-auth-strategies-warning {
+  margin-bottom: 8px;
 }
 </style>
