@@ -117,6 +117,7 @@ export const es_ES: I18nType = {
     applicationName: 'Nombre de la aplicación ',
     authStrategy: translationNeeded(en.application.authStrategy),
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    grantedScopes: translationNeeded(en.application.grantedScopes),
     clientID: 'ID de cliente: ',
     clientSecret: 'Clave secreta de cliente: ',
     reqField: ' indica campo obligatorio',
@@ -181,7 +182,6 @@ export const es_ES: I18nType = {
       nameProduct: 'Producto',
       version: 'Versión',
       status: 'Estado',
-      scopes: translationNeeded(en.productList.labels.scopes),
       actions: 'Acciones'
     }
   },
@@ -300,10 +300,13 @@ export const es_ES: I18nType = {
   },
   myApp: {
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    authStrategyFetchError: (errString: string) => translationNeeded(en.myApp.authStrategyFetchError(errString)),
     newApp: 'Nueva aplicación',
     plus: 'Plus',
     myApps: 'Mis aplicaciones',
     refreshSecret: 'Refrescar clave secreta',
+    refreshSecretSuccess: translationNeeded(en.myApp.refreshSecretSuccess),
+    refreshSecretFailure: (error: string) => translationNeeded(en.myApp.refreshSecretFailure(error)),
     noSearchResults: translationNeeded(en.myApp.noSearchResults),
     searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Eliminar',
@@ -311,7 +314,9 @@ export const es_ES: I18nType = {
     noApp: 'No hay aplicaciones',
     create: 'Crear una nueva aplicación',
     getStarted: '  para empezar',
-    deleteDialog: (name: string) => `¿Estas seguro que quieres borrar ${name}? Esta acción no se puede deshacer.`
+    deleteDialog: (name: string) => `¿Estas seguro que quieres borrar ${name}? Esta acción no se puede deshacer.`,
+    deleteSuccess: translationNeeded(en.myApp.deleteSuccess),
+    deleteFailure: (str: string) => translationNeeded(en.myApp.deleteFailure(str))
   },
   router: {
     portalTitle: 'Portal de desarrolladores',

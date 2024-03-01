@@ -113,6 +113,7 @@ export const en = {
     applicationName: 'Application Name ',
     authStrategy: 'Auth Strategy',
     authStrategyWarning: 'You cannot create an application as this developer portal has no available application auth strategies. Please contact a developer portal admin.',
+    grantedScopes: 'Granted Scopes:',
     clientID: 'Client ID: ',
     clientSecret: 'Client Secret: ',
     reqField: ' indicates required field',
@@ -177,7 +178,6 @@ export const en = {
       nameProduct: 'Product',
       version: 'Version',
       status: 'Status',
-      scopes: 'Scopes',
       actions: 'Actions'
     }
   },
@@ -202,7 +202,7 @@ export const en = {
     createApplication: 'Create an Application',
     searchPlaceholder: 'Search applications',
     cancelButton: 'Cancel',
-    filterScopes: 'filter...',
+    filterScopes: 'Filter...',
     availableScopesLabel: 'Select scopes',
     fetchingScopesLabel: 'Fetching scopes...',
     registeredApplicationsProduct: 'The following applications are already registered to this product:',
@@ -296,10 +296,13 @@ export const en = {
   },
   myApp: {
     authStrategyWarning: 'You cannot create an application as this developer portal has no available application auth strategies. Please contact a developer portal admin.',
+    authStrategyFetchError: (errString: string) => `Error fetching auth strategies: ${errString}`,
     newApp: 'New App',
     plus: 'Plus',
     myApps: 'My Apps',
     refreshSecret: 'Refresh secret',
+    refreshSecretSuccess: 'Successfully refreshed secret',
+    refreshSecretFailure: (str: string) => `Failed to refresh secret: ${str}`,
     delete: 'Delete',
     cancel: 'Cancel',
     noApp: 'No Applications',
@@ -307,7 +310,9 @@ export const en = {
     noSearchResults: 'No Applications Found',
     create: 'Create a new app',
     getStarted: ' to get started',
-    deleteDialog: (name: string) => `Are you sure you want to delete ${name}? This action cannot be undone.`
+    deleteDialog: (name: string) => `Are you sure you want to delete ${name}? This action cannot be undone.`,
+    deleteSuccess: 'Application successfully deleted',
+    deleteFailure: (str: string) => `Failed to delete application: ${str}`
   },
   router: {
     portalTitle: 'Developer Portal',

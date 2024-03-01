@@ -117,6 +117,7 @@ export const fr: I18nType = {
     applicationName: 'Nom de l\'application ',
     authStrategy: translationNeeded(en.application.authStrategy),
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    grantedScopes: translationNeeded(en.application.grantedScopes),
     clientID: 'Client ID : ',
     clientSecret: 'Client Secret : ',
     reqField: ' indique un champ obligatoire',
@@ -181,7 +182,6 @@ export const fr: I18nType = {
       nameProduct: 'Produit',
       version: 'Version',
       status: 'Statut',
-      scopes: translationNeeded(en.productList.labels.scopes),
       actions: 'Actions'
     }
   },
@@ -300,10 +300,13 @@ export const fr: I18nType = {
   },
   myApp: {
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    authStrategyFetchError: (errString: string) => translationNeeded(en.myApp.authStrategyFetchError(errString)),
     newApp: 'Nouvelle application',
     plus: 'Plus',
     myApps: 'Mes applications',
     refreshSecret: 'Actualiser le secret',
+    refreshSecretSuccess: translationNeeded(en.myApp.refreshSecretSuccess),
+    refreshSecretFailure: (error: string) => translationNeeded(en.myApp.refreshSecretFailure(error)),
     noSearchResults: translationNeeded(en.myApp.noSearchResults),
     searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Supprimer',
@@ -311,7 +314,9 @@ export const fr: I18nType = {
     noApp: 'Aucune application',
     create: 'Créer une nouvelle application',
     getStarted: ' pour commencer',
-    deleteDialog: (name: string) => `Voulez-vous vraiment supprimer ${name} ? Cette action est irréversible.`
+    deleteDialog: (name: string) => `Voulez-vous vraiment supprimer ${name} ? Cette action est irréversible.`,
+    deleteSuccess: translationNeeded(en.myApp.deleteSuccess),
+    deleteFailure: (str: string) => translationNeeded(en.myApp.deleteFailure(str))
   },
   router: {
     portalTitle: 'Portail développeur',

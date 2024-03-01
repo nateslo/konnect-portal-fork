@@ -1,4 +1,4 @@
-import { AuthStrategyClientCredentialsCredentialTypeEnum, AuthStrategyKeyAuthCredentialTypeEnum, CredentialCreationResponse, GetApplicationResponse, ListAuthStrategiesItem, ListCredentialsResponse, ListCredentialsResponseDataInner, ListRegistrationsResponse } from '@kong/sdk-portal-js'
+import { AuthStrategyClientCredentialsCredentialTypeEnum, AuthStrategyKeyAuthCredentialTypeEnum, CredentialCreationResponse, GetApplicationResponse, ListCredentialsResponse, ListCredentialsResponseDataInner, ListRegistrationsResponse } from '@kong/sdk-portal-js'
 import { product, versions, productRegistration, apps, productWithKeyAuthAppAuthStrategy, appWithAuthStrategy, versionWithKeyAuthAuthStrategy, versionWithOidcAuthStrategy } from '../fixtures/consts'
 
 const mockApplicationWithCredAndReg = (
@@ -187,7 +187,7 @@ describe('Application Registration', () => {
         }
       ])
       cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'client_credentials' } as ListAuthStrategiesItem], 0)
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['session', 'bearer'] }], 0)
 
       cy.mockDcrPortal()
       cy.visit('/my-apps')
@@ -235,7 +235,7 @@ describe('Application Registration', () => {
         }
       ])
       cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth' } as ListAuthStrategiesItem], 0)
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
 
       cy.mockDcrPortal()
       cy.visit('/my-apps')
@@ -280,10 +280,10 @@ describe('Application Registration', () => {
       ])
       cy.mockApplications([], 0)
       cy.mockApplicationAuthStrategies([
-        { name: 'foo', id: '1', credential_type: 'client_credentials' },
-        { name: 'bar', id: '2', credential_type: 'key_auth' },
-        { name: 'baz', id: '3', credential_type: 'self_managed_client_credentials' }
-      ] as ListAuthStrategiesItem[], 0)
+        { name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['client_credentials', 'session'] },
+        { name: 'bar', id: '2', credential_type: 'key_auth', key_names: ['key1', 'key2'] },
+        { name: 'baz', id: '3', credential_type: 'self_managed_client_credentials', auth_methods: ['client_credentials', 'session', 'bearer'] }
+      ], 0)
 
       cy.mockDcrPortal()
       cy.visit('/my-apps')
@@ -481,69 +481,131 @@ describe('Application Registration', () => {
     cy.get(submitButton).click()
     cy.contains(apps[0].name + 'z')
   })
-  it('can delete an existing application', () => {
-    cy.mockApplications(apps, 4)
-    cy.visit('/my-apps')
 
-    mockApplicationWithCredAndReg(apps[0])
+  describe('Delete Application', () => {
+    it('can delete an existing application', () => {
+      cy.mockApplications(apps, 4)
+      cy.visit('/my-apps')
 
-    cy.get('[data-testid="applications-table"] tbody tr')
-      .should('have.length', 4)
-      .contains(apps[0].name)
-      .click()
+      mockApplicationWithCredAndReg(apps[0])
 
-    cy.get('[data-testid="application-update-button"]').click()
-    cy.get('header h1').should('contain', 'Update Application')
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 4)
+        .contains(apps[0].name)
+        .click()
 
-    // Delete and cancel during confirmation
-    cy.get('[data-testid="application-delete-button"]').click()
-    cy.get('[data-testid="application-delete-modal"]').should('exist')
-    cy.get('[data-testid="application-delete-cancel-button"]').click()
-    cy.get('[data-testid="application-delete-modal"]').should('not.exist')
+      cy.get('[data-testid="application-update-button"]').click()
+      cy.get('header h1').should('contain', 'Update Application')
 
-    cy.intercept('DELETE', `api/v2/applications/${apps[0].id}`, {
-      statusCode: 200
-    }).as('deleteApplication')
+      // Delete and cancel during confirmation
+      cy.get('[data-testid="application-delete-button"]').click()
+      cy.get('[data-testid="application-delete-modal"]').should('exist')
+      cy.get('[data-testid="application-delete-cancel-button"]').click()
+      cy.get('[data-testid="application-delete-modal"]').should('not.exist')
 
-    cy.mockApplications([...apps.slice(1)], 2)
+      cy.intercept('DELETE', `api/v2/applications/${apps[0].id}`, {
+        statusCode: 200
+      }).as('deleteApplication')
 
-    // Delete and confirm deletion
-    cy.get('[data-testid="application-delete-button"]').click()
-    cy.get('[data-testid="application-delete-modal"]').should('exist')
-    cy.get('[data-testid="application-delete-confirm-button"]').click()
+      cy.mockApplications([...apps.slice(1)], 2)
 
-    cy.get('.toaster-container-outer .message').should(
-      'contain',
-      'Application successfully deleted'
-    )
+      // Delete and confirm deletion
+      cy.get('[data-testid="application-delete-button"]').click()
+      cy.get('[data-testid="application-delete-modal"]').should('exist')
+      cy.get('[data-testid="application-delete-confirm-button"]').click()
 
-    cy.get('[data-testid="applications-table"] tbody tr')
-      .should('have.length', 3)
-      .contains(apps[0].name)
-      .should('not.exist')
+      cy.get('.toaster-container-outer .message').should(
+        'contain',
+        'Application successfully deleted'
+      )
+
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 3)
+        .contains(apps[0].name)
+        .should('not.exist')
+    })
+    it('can delete an existing application from actions dropdown', () => {
+      cy.mockApplications(apps, 4)
+      cy.visit('/my-apps')
+
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.intercept('DELETE', `api/v2/applications/${apps[0].id}`, {
+        statusCode: 200
+      }).as('deleteApplication')
+
+      // Delete and confirm deletion
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 4)
+        .contains(apps[0].name)
+        .get(`[data-testid="actions-dropdown-${apps[0].id}"]`)
+        .click()
+
+      cy.mockApplications([...apps.slice(1)], 2)
+
+      cy.get(`[data-testid="actions-dropdown-${apps[0].id}"] [data-testid="dropdown-delete-application"]`).click()
+      cy.get('[data-testid="application-delete-modal"]').should('exist')
+      cy.get('[data-testid="application-delete-confirm-button"]').click()
+
+      cy.get('.toaster-container-outer .message').should(
+        'contain',
+        'Application successfully deleted'
+      )
+
+      cy.wait('@getApplications')
+
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 3)
+        .contains(apps[0].name)
+        .should('not.exist')
+    })
+    it('handles error when deleting an existing application', () => {
+      cy.mockApplications(apps, 4)
+      cy.visit('/my-apps')
+
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.intercept('DELETE', `api/v2/applications/${apps[0].id}`, {
+        statusCode: 500,
+        body: { message: 'Error deleting application' }
+      }).as('deleteApplication')
+
+      // Delete and confirm deletion
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 4)
+        .contains(apps[0].name)
+        .get(`[data-testid="actions-dropdown-${apps[0].id}"]`)
+        .click()
+
+      cy.get(`[data-testid="actions-dropdown-${apps[0].id}"] [data-testid="dropdown-delete-application"]`).click()
+      cy.get('[data-testid="application-delete-modal"]').should('exist')
+      cy.get('[data-testid="application-delete-confirm-button"]').click()
+
+      cy.get('[data-testid="delete-error-alert"]').should(
+        'contain',
+        'Error deleting application'
+      )
+
+      cy.get('[data-testid="applications-table"] tbody tr')
+        .should('have.length', 4)
+        .contains(apps[0].name)
+        .should('exist')
+    })
   })
 
   it('shows granted scopes if present ', () => {
     cy.mockApplications(apps, 1)
     cy.visit('/my-apps')
 
-    mockApplicationWithCredAndReg(apps[0], [], [
-      {
-        id: 'regId',
-        product_id: 'id',
-        product_name: 'mockbin',
-        product_version_id: 'pvid',
-        product_version_name: 'version_name',
-        application_id: apps[0].id,
-        status: 'approved',
-        created_at: '2023-11-24T17:35:52.765Z',
-        updated_at: '2023-11-24T17:49:32.719Z',
-        granted_scopes: [
-          'scope1',
-          'scope2'
-        ]
-      }
-    ])
+    const app = {
+      ...apps[0],
+      scopes: [
+        'scope1',
+        'scope2'
+      ]
+    }
+
+    mockApplicationWithCredAndReg(app, [])
     cy.get('[data-testid="applications-table"] tbody tr')
       .contains(apps[0].name)
       .click()
@@ -557,25 +619,17 @@ describe('Application Registration', () => {
     cy.mockApplications(apps, 1)
     cy.visit('/my-apps')
 
-    mockApplicationWithCredAndReg(apps[0], [], [
-      {
-        id: 'regId',
-        product_id: 'id',
-        product_name: 'mockbin',
-        product_version_id: 'pvid',
-        product_version_name: 'version_name',
-        application_id: apps[0].id,
-        status: 'approved',
-        created_at: '2023-11-24T17:35:52.765Z',
-        updated_at: '2023-11-24T17:49:32.719Z',
-        granted_scopes: [
-          'scope1',
-          'scope2',
-          'scope3',
-          'scope4'
-        ]
-      }
-    ])
+    const app = {
+      ...apps[0],
+      scopes: [
+        'scope1',
+        'scope2',
+        'scope3',
+        'scope4'
+      ]
+    }
+
+    mockApplicationWithCredAndReg(app, [], [])
     cy.get('[data-testid="applications-table"] tbody tr')
       .contains(apps[0].name)
       .click()
@@ -591,19 +645,7 @@ describe('Application Registration', () => {
     cy.mockApplications(apps, 1)
     cy.visit('/my-apps')
 
-    mockApplicationWithCredAndReg(apps[0], [], [
-      {
-        id: 'regId',
-        product_id: 'id',
-        product_name: 'mockbin',
-        product_version_id: 'pvid',
-        product_version_name: 'version_name',
-        application_id: apps[0].id,
-        status: 'approved',
-        created_at: '2023-11-24T17:35:52.765Z',
-        updated_at: '2023-11-24T17:49:32.719Z'
-      }
-    ])
+    mockApplicationWithCredAndReg(apps[0], [], [])
     cy.get('[data-testid="applications-table"] tbody tr')
       .contains(apps[0].name)
       .click()
@@ -994,15 +1036,9 @@ describe('Application Registration', () => {
         .should('contain', `/application/create?product=${productWithKeyAuthAppAuthStrategy.id}&product_version=${versionWithKeyAuthAuthStrategy.id}&auth_strategy_id=${versionWithKeyAuthAuthStrategy.registration_configs[0].id}`)
     })
 
-    it('does not show select available scopes if no scopes are available - feature flag on', () => {
+    it('does not show select available scopes if no scopes are available', () => {
       cy.mockProductDocument()
       cy.mockProduct()
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3460-developer-managed-scopes',
-          value: true
-        }
-      ])
       cy.mockProductVersionApplicationRegistration(versions[0])
       cy.mockGetProductDocuments(product.id)
       cy.mockProductOperations(product.id, versions[0].id)
@@ -1021,15 +1057,9 @@ describe('Application Registration', () => {
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
       cy.get('[data-testid="available-scopes-select"]').should('not.exist')
     })
-    it('does show select available scopes if scopes are available - feature flag on', () => {
+    it('does show select available scopes if scopes are available', () => {
       cy.mockProductDocument()
       cy.mockProduct(product.id, product)
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3460-developer-managed-scopes',
-          value: true
-        }
-      ])
       cy.mockProductVersionApplicationRegistration(versions[0])
       // Update the version to include registration config
       const productVersionWithScopes = versions[0]
@@ -1060,73 +1090,6 @@ describe('Application Registration', () => {
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
       cy.get('.available-scopes-select').should('exist')
-    })
-    it('does not show select available scopes if scopes are available - feature flag off', () => {
-      cy.mockProductDocument()
-      cy.mockProduct(product.id, product)
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3460-developer-managed-scopes',
-          value: false
-        }
-      ])
-      cy.mockProductVersionApplicationRegistration(versions[0])
-      // Update the version to include registration config
-      const productVersionWithScopes = versions[0]
-
-      productVersionWithScopes.registration_configs = [
-        {
-          name: 'openid-connect',
-          available_scopes: [
-            'scope1',
-            'scope2'
-          ]
-        }
-      ]
-      cy.mockProductVersion(product.id, versions[0].id, productVersionWithScopes)
-      cy.mockGetProductDocuments(product.id)
-      cy.mockProductOperations(product.id, versions[0].id)
-      cy.mockProductVersionSpec(product.id, versions[0].id)
-      cy.mockRegistrations('*', []) // mock with empty so that we add one.
-
-      cy.viewport(1440, 900)
-      cy.visit(`/spec/${product.id}`)
-      cy.get('.swagger-ui', { timeout: 12000 })
-
-      cy.mockApplications(apps, 4)
-      cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
-
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
-      cy.get(selectors.appRegModal).should('exist')
-      cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
-      cy.get('.available-scopes-select').should('not.exist')
-    })
-    it('does not show select available scopes if feature flag off', () => {
-      cy.mockProductDocument()
-      cy.mockProduct()
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3460-developer-managed-scopes',
-          value: false
-        }
-      ])
-      cy.mockProductVersionApplicationRegistration(versions[0])
-      cy.mockGetProductDocuments(product.id)
-      cy.mockProductOperations(product.id, versions[0].id)
-      cy.mockProductVersionSpec(product.id, versions[0].id)
-      cy.mockRegistrations('*', []) // mock with empty so that we add one.
-
-      cy.viewport(1440, 900)
-      cy.visit(`/spec/${product.id}`)
-      cy.get('.swagger-ui', { timeout: 12000 })
-
-      cy.mockApplications(apps, 4)
-      cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
-
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
-      cy.get(selectors.appRegModal).should('exist')
-      cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
-      cy.get('[data-testid="available-scopes-select"]').should('not.exist')
     })
 
     it('can request registration to a product and is directed to application upon auto_approval', () => {
@@ -1237,7 +1200,8 @@ describe('Application Registration', () => {
       auth_strategy: {
         id: 'key-auth-strat-id',
         name: 'keyauthstrat',
-        credential_type: AuthStrategyKeyAuthCredentialTypeEnum.KeyAuth
+        credential_type: AuthStrategyKeyAuthCredentialTypeEnum.KeyAuth,
+        key_names: ['key1', 'key2']
       }
     }
 
@@ -1480,6 +1444,28 @@ describe('Application Registration', () => {
       cy.get('[data-testid="close-btn"]').click()
 
       cy.get('[data-testid="application-secret-token-modal"]').should('not.exist')
+    })
+
+    it('handles failure to refresh token of existing application with dcr', () => {
+      cy.mockDcrPortal()
+      cy.mockApplications([{ ...apps[0] }], 1)
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="applications-table"] tbody tr .actions-badge')
+        .should('have.length', 1)
+        .click()
+
+      cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
+        statusCode: 500,
+        body: { error: 'Internal Server Error' }
+      }).as('refreshToken')
+
+      cy.get('[data-testid="dropdown-delete-application"]').should('exist')
+      cy.get('[data-testid="dropdown-refresh-application-dcr-token"]').should('exist').click()
+
+      cy.wait('@refreshToken')
+
+      cy.get('[data-testid="refresh-error-alert"]').should('exist').should('contain', 'Failed to refresh secret')
     })
 
     it('can refresh token of existing application with dcr from application page', () => {

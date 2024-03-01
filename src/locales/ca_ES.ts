@@ -117,6 +117,7 @@ export const ca_ES: I18nType = {
     applicationName: "Nom de l'aplicació ",
     authStrategy: translationNeeded(en.application.authStrategy),
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    grantedScopes: translationNeeded(en.application.grantedScopes),
     clientID: 'ID de client: ',
     clientSecret: 'Clau secreta de client: ',
     reqField: ' indica un camp obligatori',
@@ -181,7 +182,6 @@ export const ca_ES: I18nType = {
       nameProduct: 'Producte',
       version: 'Versió',
       status: 'Estat',
-      scopes: translationNeeded(en.productList.labels.scopes),
       actions: 'Accions'
     }
   },
@@ -300,10 +300,13 @@ export const ca_ES: I18nType = {
   },
   myApp: {
     authStrategyWarning: translationNeeded(en.application.authStrategyWarning),
+    authStrategyFetchError: (errString: string) => translationNeeded(en.myApp.authStrategyFetchError(errString)),
     newApp: 'Nova aplicació',
     plus: 'Més',
     myApps: 'Les meves aplicacions',
     refreshSecret: 'Actualitzar secret',
+    refreshSecretSuccess: translationNeeded(en.myApp.refreshSecretSuccess),
+    refreshSecretFailure: (error: string) => translationNeeded(en.myApp.refreshSecretFailure(error)),
     noSearchResults: translationNeeded(en.myApp.noSearchResults),
     searchPlaceholder: translationNeeded(en.myApp.searchPlaceholder),
     delete: 'Eliminar',
@@ -311,7 +314,9 @@ export const ca_ES: I18nType = {
     noApp: 'Sense aplicacions',
     create: 'Crear una nova aplicació',
     getStarted: ' per començar',
-    deleteDialog: (name: string) => `Segur que voleu eliminar ${name}?Aquesta acció no es pot desfer.`
+    deleteDialog: (name: string) => `Segur que voleu eliminar ${name}?Aquesta acció no es pot desfer.`,
+    deleteSuccess: translationNeeded(en.myApp.deleteSuccess),
+    deleteFailure: (str: string) => translationNeeded(en.myApp.deleteFailure(str))
   },
   router: {
     portalTitle: 'Portal del desenvolupador',

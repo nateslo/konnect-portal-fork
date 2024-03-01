@@ -116,6 +116,7 @@ export interface I18nType {
     clientID: string;
     clientSecret: string;
     reqField: string;
+    grantedScopes: string;
     redirectUriLabel: string;
     applicationCredentials: string;
     applicationSecret: string;
@@ -178,7 +179,6 @@ export interface I18nType {
       version: string;
       status: string;
       actions: string;
-      scopes: string;
     };
   };
   dcrAuthentication: {
@@ -296,10 +296,13 @@ export interface I18nType {
   };
   myApp: {
     authStrategyWarning: string;
+    authStrategyFetchError: (errString: string) => string;
     newApp: string;
     plus: string;
     myApps: string;
     refreshSecret: string;
+    refreshSecretSuccess: string;
+    refreshSecretFailure: (error:string) => string;
     delete: string;
     cancel: string;
     searchPlaceholder: string;
@@ -308,6 +311,8 @@ export interface I18nType {
     create: string;
     getStarted: string;
     deleteDialog: (name: string) => string;
+    deleteSuccess: string;
+    deleteFailure: (str: string) => string;
   };
   router: {
     portalTitle: string;
