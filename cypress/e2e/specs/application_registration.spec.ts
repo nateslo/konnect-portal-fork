@@ -1,5 +1,5 @@
-import { AuthStrategyClientCredentialsCredentialTypeEnum, AuthStrategyKeyAuthCredentialTypeEnum, CredentialCreationResponse, GetApplicationResponse, ListCredentialsResponse, ListCredentialsResponseDataInner, ListRegistrationsResponse } from '@kong/sdk-portal-js'
-import { product, versions, productRegistration, apps, productWithKeyAuthAppAuthStrategy, appWithAuthStrategy, versionWithKeyAuthAuthStrategy, versionWithOidcAuthStrategy } from '../fixtures/consts'
+import { AuthStrategyKeyAuthCredentialTypeEnum, CredentialCreationResponse, GetApplicationResponse, ListCredentialsResponse, ListCredentialsResponseDataInner, ListRegistrationsResponse } from '@kong/sdk-portal-js'
+import { product, versions, productRegistration, apps, productWithKeyAuthAppAuthStrategy, appWithAuthStrategy, versionWithKeyAuthAuthStrategy, versionWithOidcAuthStrategy, oidcApp, dcrApp } from '../fixtures/consts'
 
 const mockApplicationWithCredAndReg = (
   data: GetApplicationResponse,
@@ -57,6 +57,7 @@ Cypress.Commands.add('createNewApplication', (app, productId, versions) => {
   cy.mockProductDocumentTree(productId)
   cy.mockProductDocument(productId)
   cy.mockApplications([], 0)
+  cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
   cy.mockRegistrations(app.id)
 
   cy.mockProduct(productId, product, versions)
@@ -75,7 +76,7 @@ Cypress.Commands.add('createNewApplication', (app, productId, versions) => {
 
   cy.visit(`/spec/${productId}`)
   cy.get('.swagger-ui', { timeout: 12000 })
-  cy.get('[data-testid="register-button"]', { timeout: 12000 })
+  cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 })
     .click({ force: true })
   cy.get(selectors.appRegModal).should('exist')
   cy.get('[data-testid="create-application"]').click()
@@ -132,311 +133,6 @@ describe('Application Registration', () => {
       .should('contain', 'No Applications')
   })
 
-  describe('Create Application', () => {
-    it('can create a new applications from spec page', () => {
-      mockApplicationWithCredAndReg(apps[0])
-      cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, [])
-      cy.mockApplications([apps[0]], 1)
-      cy.createNewApplication(apps[0], product.id, versions)
-    })
-    it('can create an application with DCR for portal enabled', () => {
-      cy.mockApplications([], 0)
-      cy.mockDcrPortal()
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('exist')
-      cy.get('[data-testid="create-application-link"]').should('exist')
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('header h1').should('contain', 'Create New Application')
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
-      cy.get('#description').type(apps[3].description, { delay: 0 })
-      cy.get('#redirectUri').type(apps[3].redirect_uri, { delay: 0 })
-      cy.get(submitButton).should('not.be.disabled')
-
-      cy.intercept('POST', '**/api/v2/applications', {
-        body: {
-          id: apps[0].id,
-          credentials: {
-            client_id: 'your-client-id',
-            client_secret: 'your-client-secret'
-          }
-        }
-      }).as('postApplicationRegistration')
-      mockApplicationWithCredAndReg(apps[3])
-      mockApplicationWithCredAndReg(apps[0])
-
-      cy.get(submitButton).click()
-
-      cy.wait('@postApplicationRegistration').then(() => {
-        cy.get('[data-testid="copy-secret-modal"]').should('exist')
-        cy.get('[data-testid="copy-button"]').eq(0).should('exist').should('contain', 'your-client-id')
-        cy.get('[data-testid="copy-button"]').eq(1).should('exist').should('contain', 'your-client-secret')
-        cy.get('[data-testid="close-application-secret-modal"]').should('exist').click()
-
-        cy.get('.k-alert.success').should('exist')
-      })
-    })
-
-    it('appregv2 - can create an application with DCR for portal enabled - 1 auth strat', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
-      cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['session', 'bearer'] }], 0)
-
-      cy.mockDcrPortal()
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('exist')
-      cy.get('[data-testid="create-application-link"]').should('exist')
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('header h1').should('contain', 'Create New Application')
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
-      cy.get('#description').type(apps[3].description, { delay: 0 })
-      cy.get('#redirectUri').type(apps[3].redirect_uri, { delay: 0 })
-      cy.get(submitButton).should('not.be.disabled')
-
-      cy.intercept('POST', '**/api/v2/applications', {
-        body: {
-          id: apps[0].id,
-          credentials: {
-            client_id: 'your-client-id',
-            client_secret: 'your-client-secret'
-          }
-        }
-      }).as('postApplicationRegistration')
-      mockApplicationWithCredAndReg(apps[3])
-      mockApplicationWithCredAndReg(apps[0])
-
-      cy.get(submitButton).click()
-
-      cy.wait('@postApplicationRegistration').then(() => {
-        cy.get('[data-testid="copy-secret-modal"]').should('exist')
-        cy.get('[data-testid="copy-button"]').eq(0).should('exist').should('contain', 'your-client-id')
-        cy.get('[data-testid="copy-button"]').eq(1).should('exist').should('contain', 'your-client-secret')
-        cy.get('[data-testid="close-application-secret-modal"]').should('exist').click()
-
-        cy.get('.k-alert.success').should('exist')
-      })
-    })
-
-    it('appregv2 - can create an application with key-auth for portal enabled - 1 auth strat', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
-      cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
-
-      cy.mockDcrPortal()
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('exist')
-      cy.get('[data-testid="create-application-link"]').should('exist')
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('header h1').should('contain', 'Create New Application')
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
-      cy.get('#description').type(apps[3].description, { delay: 0 })
-      cy.get('[data-testid="reference-id-input"]').type(apps[3].reference_id, { delay: 0 })
-      cy.get(submitButton).should('not.be.disabled')
-
-      cy.intercept('POST', '**/api/v2/applications', {
-        body: {
-          id: apps[0].id,
-          credentials: {
-            client_id: 'your-client-id',
-            client_secret: 'your-client-secret'
-          }
-        }
-      }).as('postApplicationRegistration')
-      mockApplicationWithCredAndReg(apps[3])
-      mockApplicationWithCredAndReg(apps[0])
-
-      cy.get(submitButton).click()
-
-      cy.wait('@postApplicationRegistration').then(() => {
-        cy.get('[data-testid="copy-secret-modal"]').should('not.exist')
-        cy.get('.k-alert.success').should('exist')
-      })
-    })
-
-    it('appregv2 - can create an application with DCR for portal enabled - many auth strat', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
-      cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([
-        { name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['client_credentials', 'session'] },
-        { name: 'bar', id: '2', credential_type: 'key_auth', key_names: ['key1', 'key2'] },
-        { name: 'baz', id: '3', credential_type: 'self_managed_client_credentials', auth_methods: ['client_credentials', 'session', 'bearer'] }
-      ], 0)
-
-      cy.mockDcrPortal()
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('exist')
-      cy.get('[data-testid="create-application-link"]').should('exist')
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('header h1').should('contain', 'Create New Application')
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
-      cy.get('#description').type(apps[3].description, { delay: 0 })
-
-      cy.get('[data-testid="application-auth-strategy-select"]').click()
-      cy.get('[data-testid="k-select-item-2"] > .k-select-item-container > button').contains('bar').click()
-      cy.get('#redirectUri').should('not.exist')
-      cy.get('[data-testid="reference-id-input"]').should('exist')
-
-      cy.get('[data-testid="application-auth-strategy-select"]').click()
-      cy.get('[data-testid="k-select-item-3"] > .k-select-item-container > button').contains('baz').click()
-      cy.get('#redirectUri').should('exist')
-      cy.get('[data-testid="reference-id-input"]').should('exist')
-
-      cy.get('[data-testid="application-auth-strategy-select"]').click()
-      cy.get('[data-testid="k-select-item-1"] > .k-select-item-container > button').contains('foo').click()
-      cy.get('#redirectUri').should('exist')
-      cy.get('[data-testid="reference-id-input"]').should('not.exist')
-
-      cy.get('#redirectUri').type(apps[3].redirect_uri, { delay: 0 })
-
-      cy.get(submitButton).should('not.be.disabled')
-
-      cy.intercept('POST', '**/api/v2/applications', {
-        body: {
-          id: apps[0].id,
-          credentials: {
-            client_id: 'your-client-id',
-            client_secret: 'your-client-secret'
-          }
-        }
-      }).as('postApplicationRegistration')
-      mockApplicationWithCredAndReg(apps[3])
-      mockApplicationWithCredAndReg(apps[0])
-
-      cy.get(submitButton).click()
-
-      cy.wait('@postApplicationRegistration').then(() => {
-        cy.get('[data-testid="copy-secret-modal"]').should('exist')
-        cy.get('[data-testid="copy-button"]').eq(0).should('exist').should('contain', 'your-client-id')
-        cy.get('[data-testid="copy-button"]').eq(1).should('exist').should('contain', 'your-client-secret')
-        cy.get('[data-testid="close-application-secret-modal"]').should('exist').click()
-
-        cy.get('.k-alert.success').should('exist')
-      })
-    })
-    it('can create a new application from my-appglo dashboard', () => {
-      cy.mockApplications(apps, 4)
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('header h1').should('contain', 'Create New Application')
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="application-name-input"]').type(apps[0].name, { delay: 0 })
-      cy.get('#description').type(apps[0].description, { delay: 0 })
-      cy.get('[data-testid="reference-id-input"]').type(apps[0].reference_id, { delay: 0 })
-      cy.get(submitButton).should('not.be.disabled')
-
-      cy.intercept('POST', '**/api/v2/applications', {
-        body: {
-          id: apps[0].id
-        }
-      }).as('postApplicationRegistration')
-      mockApplicationWithCredAndReg(apps[0])
-
-      cy.get(submitButton).click()
-
-      cy.get('.k-alert.success').should('exist')
-      cy.contains(apps[0].name)
-      cy.contains(apps[0].description)
-      cy.contains(apps[0].reference_id)
-    })
-    it('can generate reference Id via button', () => {
-      cy.mockApplications(apps, 4)
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').click()
-
-      cy.get('[data-testid="generate-reference-id"]').click()
-
-      cy.get('[data-testid="reference-id-input"]').should('not.have.value', '')
-    })
-
-    it('appregv2 - create application form shows banner if no auth strategies and flag enabled', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
-      cy.mockApplicationAuthStrategies([], 0)
-      cy.visit('/application/create')
-
-      cy.get('[data-testid="application-name-input"]').type(apps[0].name, { delay: 0 })
-      cy.get('#description').type(apps[0].description, { delay: 0 })
-      cy.get('[data-testid="reference-id-input"]').type(apps[0].reference_id, { delay: 0 })
-      cy.get(submitButton).should('be.disabled')
-      cy.get('[data-testid="no-auth-strategies-warning"]').should('be.visible')
-    })
-
-    it('appregv2 - create application form does not show banner if flag disabled', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: false
-        }
-      ])
-      cy.mockApplicationAuthStrategies([], 0)
-      cy.visit('/application/create')
-
-      cy.get('[data-testid="no-auth-strategies-warning"]').should('not.exist')
-    })
-    it('appregv2 - does not show warning banner if flag is not on', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: false
-        }
-      ])
-      cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([], 0)
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('not.be.disabled')
-      cy.get('[data-testid="no-auth-strategies-warning"]').should('not.exist')
-    })
-
-    it('appregv2 - shows warning banner if no available auth strategies', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
-      cy.mockApplications([], 0)
-      cy.mockApplicationAuthStrategies([], 0)
-      cy.visit('/my-apps')
-
-      cy.get('[data-testid="create-application-button"]').should('have.attr', 'disabled', 'disabled')
-      cy.get('[data-testid="no-auth-strategies-warning"]').should('be.visible')
-    })
-  })
-
   it('can return to My Apps from application details via breadcrumb', () => {
     cy.mockDeveloperRefresh()
     cy.mockApplications(apps, 4)
@@ -480,6 +176,298 @@ describe('Application Registration', () => {
 
     cy.get(submitButton).click()
     cy.contains(apps[0].name + 'z')
+  })
+
+  it('shows granted scopes if present ', () => {
+    cy.mockApplications(apps, 1)
+    cy.visit('/my-apps')
+
+    const app = {
+      ...apps[0],
+      scopes: [
+        'scope1',
+        'scope2'
+      ]
+    }
+
+    mockApplicationWithCredAndReg(app, [])
+    cy.get('[data-testid="applications-table"] tbody tr')
+      .contains(apps[0].name)
+      .click()
+
+    cy.get('[data-testid="granted-scope1"]').should('exist')
+    cy.get('[data-testid="granted-scope2"]').should('exist')
+    cy.get('[data-testid="show-more-scopes"]').should('not.exist')
+  })
+
+  it('shows granted scopes if present - show more badge exists', () => {
+    cy.mockApplications(apps, 1)
+    cy.visit('/my-apps')
+
+    const app = {
+      ...apps[0],
+      scopes: [
+        'scope1',
+        'scope2',
+        'scope3',
+        'scope4'
+      ]
+    }
+
+    mockApplicationWithCredAndReg(app, [], [])
+    cy.get('[data-testid="applications-table"] tbody tr')
+      .contains(apps[0].name)
+      .click()
+
+    cy.get('[data-testid="granted-scope1"]').should('exist')
+    cy.get('[data-testid="granted-scope2"]').should('exist')
+    cy.get('[data-testid="show-more-scopes"]').should('exist').click().then(() => {
+      cy.get('[data-testid="granted-scope4"]').should('exist')
+    })
+  })
+
+  it('does not show granted scopes if not in response ', () => {
+    cy.mockApplications(apps, 1)
+    cy.visit('/my-apps')
+
+    mockApplicationWithCredAndReg(apps[0], [], [])
+    cy.get('[data-testid="applications-table"] tbody tr')
+      .contains(apps[0].name)
+      .click()
+
+    cy.get('[data-testid="products-list"]')
+      .should('not.include.text', 'Scopes')
+    cy.get('.badge-container').should('not.exist')
+  })
+
+  describe('Create Application', () => {
+    it('can create a new applications from spec page', () => {
+      mockApplicationWithCredAndReg(apps[0])
+      cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, [])
+      cy.mockApplications([apps[0]], 1)
+      cy.createNewApplication(apps[0], product.id, versions)
+    })
+
+    it('can create an application with DCR for portal enabled - 1 auth strat', () => {
+      cy.mockApplications([], 0)
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['session', 'bearer'] }], 0)
+
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').should('exist')
+      cy.get('[data-testid="create-application-link"]').should('exist')
+      cy.get('[data-testid="create-application-button"]').click()
+
+      cy.get('header h1').should('contain', 'Create New Application')
+      cy.get(submitButton).should('be.disabled')
+      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
+      cy.get('#description').type(apps[3].description, { delay: 0 })
+      cy.get('#redirectUri').type(apps[3].redirect_uri, { delay: 0 })
+      cy.get(submitButton).should('not.be.disabled')
+
+      cy.intercept('POST', '**/api/v2/applications', {
+        body: {
+          id: apps[0].id,
+          credentials: {
+            client_id: 'your-client-id',
+            client_secret: 'your-client-secret'
+          }
+        }
+      }).as('postApplicationRegistration')
+      mockApplicationWithCredAndReg(apps[3])
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.get(submitButton).click()
+
+      cy.wait('@postApplicationRegistration').then(() => {
+        cy.get('[data-testid="copy-secret-modal"]').should('exist')
+        cy.get('[data-testid="copy-button"]').eq(0).should('exist').should('contain', 'your-client-id')
+        cy.get('[data-testid="copy-button"]').eq(1).should('exist').should('contain', 'your-client-secret')
+        cy.get('[data-testid="close-application-secret-modal"]').should('exist').click()
+
+        cy.get('.k-alert.success').should('exist')
+      })
+    })
+
+    it('can create an application with key-auth for portal enabled - 1 auth strat', () => {
+      cy.mockApplications([], 0)
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
+
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').should('exist')
+      cy.get('[data-testid="create-application-link"]').should('exist')
+      cy.get('[data-testid="create-application-button"]').click()
+
+      cy.get('header h1').should('contain', 'Create New Application')
+      cy.get(submitButton).should('be.disabled')
+      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
+      cy.get('#description').type(apps[3].description, { delay: 0 })
+      cy.get('[data-testid="reference-id-input"]').type(apps[3].reference_id, { delay: 0 })
+      cy.get(submitButton).should('not.be.disabled')
+
+      cy.intercept('POST', '**/api/v2/applications', {
+        body: {
+          id: apps[0].id,
+          credentials: {
+            client_id: 'your-client-id',
+            client_secret: 'your-client-secret'
+          }
+        }
+      }).as('postApplicationRegistration')
+      mockApplicationWithCredAndReg(apps[3])
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.get(submitButton).click()
+
+      cy.wait('@postApplicationRegistration').then(() => {
+        cy.get('[data-testid="copy-secret-modal"]').should('not.exist')
+        cy.get('.k-alert.success').should('exist')
+      })
+    })
+
+    it('can create an application with DCR for portal enabled - many auth strat', () => {
+      cy.mockApplications([], 0)
+      cy.mockApplicationAuthStrategies([
+        { name: 'foo', id: '1', credential_type: 'client_credentials', auth_methods: ['client_credentials', 'session'] },
+        { name: 'bar', id: '2', credential_type: 'key_auth', key_names: ['key1', 'key2'] },
+        { name: 'baz', id: '3', credential_type: 'self_managed_client_credentials', auth_methods: ['client_credentials', 'session', 'bearer'] },
+        { name: 'scopes', id: '4', credential_type: 'client_credentials', auth_methods: ['client_credentials', 'session'], available_scopes: ['scope1', 'scope2'] }
+      ], 0)
+
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').should('exist')
+      cy.get('[data-testid="create-application-link"]').should('exist')
+      cy.get('[data-testid="create-application-button"]').click()
+
+      cy.get('header h1').should('contain', 'Create New Application')
+      cy.get(submitButton).should('be.disabled')
+      cy.get('[data-testid="application-name-input"]').type(apps[3].name, { delay: 0 })
+      cy.get('#description').type(apps[3].description, { delay: 0 })
+
+      cy.get('[data-testid="application-auth-strategy-select"]').click()
+      cy.get('[data-testid="k-select-item-2"] > .k-select-item-container > button').contains('bar').click()
+      cy.get('#redirectUri').should('not.exist')
+      cy.get('[data-testid="reference-id-input"]').should('exist')
+
+      cy.get('[data-testid="application-auth-strategy-select"]').click()
+      cy.get('[data-testid="k-select-item-3"] > .k-select-item-container > button').contains('baz').click()
+      cy.get('#redirectUri').should('exist')
+      cy.get('[data-testid="reference-id-input"]').should('exist')
+
+      cy.get('[data-testid="application-auth-strategy-select"]').click()
+      cy.get('[data-testid="k-select-item-4"] > .k-select-item-container > button').contains('scopes').click()
+      cy.get('#redirectUri').should('exist')
+      cy.get('#availableScopes').should('exist')
+      cy.get('[data-testid="reference-id-input"]').should('not.exist')
+
+      cy.get('[data-testid="application-auth-strategy-select"]').click()
+      cy.get('[data-testid="k-select-item-1"] > .k-select-item-container > button').contains('foo').click()
+      cy.get('#redirectUri').should('exist')
+      cy.get('[data-testid="reference-id-input"]').should('not.exist')
+
+      cy.get('#redirectUri').type(apps[3].redirect_uri, { delay: 0 })
+
+      cy.get(submitButton).should('not.be.disabled')
+
+      cy.intercept('POST', '**/api/v2/applications', {
+        body: {
+          id: apps[0].id,
+          credentials: {
+            client_id: 'your-client-id',
+            client_secret: 'your-client-secret'
+          }
+        }
+      }).as('postApplicationRegistration')
+      mockApplicationWithCredAndReg(apps[3])
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.get(submitButton).click()
+
+      cy.wait('@postApplicationRegistration').then(() => {
+        cy.get('[data-testid="copy-secret-modal"]').should('exist')
+        cy.get('[data-testid="copy-button"]').eq(0).should('exist').should('contain', 'your-client-id')
+        cy.get('[data-testid="copy-button"]').eq(1).should('exist').should('contain', 'your-client-secret')
+        cy.get('[data-testid="close-application-secret-modal"]').should('exist').click()
+
+        cy.get('.k-alert.success').should('exist')
+      })
+    })
+    it('can create a new application from my-app dashboard', () => {
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
+      cy.mockApplications(apps, 4)
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').click()
+
+      cy.get('header h1').should('contain', 'Create New Application')
+      cy.get(submitButton).should('be.disabled')
+      cy.get('[data-testid="application-name-input"]').type(apps[0].name, { delay: 0 })
+      cy.get('#description').type(apps[0].description, { delay: 0 })
+      cy.get('[data-testid="reference-id-input"]').type(apps[0].reference_id, { delay: 0 })
+      cy.get(submitButton).should('not.be.disabled')
+
+      cy.intercept('POST', '**/api/v2/applications', {
+        body: {
+          id: apps[0].id
+        }
+      }).as('postApplicationRegistration')
+      mockApplicationWithCredAndReg(apps[0])
+
+      cy.get(submitButton).click()
+
+      cy.get('.k-alert.success').should('exist')
+      cy.contains(apps[0].name)
+      cy.contains(apps[0].description)
+      cy.contains(apps[0].reference_id)
+    })
+    it('can generate reference Id via button', () => {
+      cy.mockApplications(apps, 4)
+      cy.mockApplicationAuthStrategies([{ name: 'foo', id: '1', credential_type: 'key_auth', key_names: ['key1', 'key2'] }], 0)
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').click()
+
+      cy.get('[data-testid="generate-reference-id"]').click()
+
+      cy.get('[data-testid="reference-id-input"]').should('not.have.value', '')
+    })
+
+    it('create application form shows banner if no auth strategies and flag enabled', () => {
+      cy.mockApplicationAuthStrategies([], 0)
+      cy.visit('/application/create')
+
+      cy.get('[data-testid="application-name-input"]').type(apps[0].name, { delay: 0 })
+      cy.get('#description').type(apps[0].description, { delay: 0 })
+      cy.get('[data-testid="reference-id-input"]').type(apps[0].reference_id, { delay: 0 })
+      cy.get(submitButton).should('be.disabled')
+      cy.get('[data-testid="no-auth-strategies-warning"]').should('be.visible')
+    })
+
+    it('create application form does not show banner if flag disabled', () => {
+      cy.mockApplicationAuthStrategies([], 0)
+      cy.visit('/application/create')
+
+      cy.get('[data-testid="no-auth-strategies-warning"]').should('not.exist')
+    })
+    it('does not show warning banner if flag is not on', () => {
+      cy.mockApplications([], 0)
+      cy.mockApplicationAuthStrategies([], 0)
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').should('not.be.disabled')
+      cy.get('[data-testid="no-auth-strategies-warning"]').should('not.exist')
+    })
+
+    it('shows warning banner if no available auth strategies', () => {
+      cy.mockApplications([], 0)
+      cy.mockApplicationAuthStrategies([], 0)
+      cy.visit('/my-apps')
+
+      cy.get('[data-testid="create-application-button"]').should('have.attr', 'disabled', 'disabled')
+      cy.get('[data-testid="no-auth-strategies-warning"]').should('be.visible')
+    })
   })
 
   describe('Delete Application', () => {
@@ -591,68 +579,6 @@ describe('Application Registration', () => {
         .contains(apps[0].name)
         .should('exist')
     })
-  })
-
-  it('shows granted scopes if present ', () => {
-    cy.mockApplications(apps, 1)
-    cy.visit('/my-apps')
-
-    const app = {
-      ...apps[0],
-      scopes: [
-        'scope1',
-        'scope2'
-      ]
-    }
-
-    mockApplicationWithCredAndReg(app, [])
-    cy.get('[data-testid="applications-table"] tbody tr')
-      .contains(apps[0].name)
-      .click()
-
-    cy.get('[data-testid="granted-scope1"]').should('exist')
-    cy.get('[data-testid="granted-scope2"]').should('exist')
-    cy.get('[data-testid="show-more-scopes"]').should('not.exist')
-  })
-
-  it('shows granted scopes if present - show more badge exists', () => {
-    cy.mockApplications(apps, 1)
-    cy.visit('/my-apps')
-
-    const app = {
-      ...apps[0],
-      scopes: [
-        'scope1',
-        'scope2',
-        'scope3',
-        'scope4'
-      ]
-    }
-
-    mockApplicationWithCredAndReg(app, [], [])
-    cy.get('[data-testid="applications-table"] tbody tr')
-      .contains(apps[0].name)
-      .click()
-
-    cy.get('[data-testid="granted-scope1"]').should('exist')
-    cy.get('[data-testid="granted-scope2"]').should('exist')
-    cy.get('[data-testid="show-more-scopes"]').should('exist').click().then(() => {
-      cy.get('[data-testid="granted-scope4"]').should('exist')
-    })
-  })
-
-  it('does not show granted scopes if not in response ', () => {
-    cy.mockApplications(apps, 1)
-    cy.visit('/my-apps')
-
-    mockApplicationWithCredAndReg(apps[0], [], [])
-    cy.get('[data-testid="applications-table"] tbody tr')
-      .contains(apps[0].name)
-      .click()
-
-    cy.get('[data-testid="products-list"]')
-      .should('not.include.text', 'Scopes')
-    cy.get('.badge-container').should('not.exist')
   })
 
   describe('Credentials Management', () => {
@@ -852,7 +778,7 @@ describe('Application Registration', () => {
       cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
       cy.mockGrantedScopes(versions[0].id, apps[0].id, ['scope1', 'scope2'])
 
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
+      cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 }).click()
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
 
@@ -876,13 +802,7 @@ describe('Application Registration', () => {
         'You will be notified upon approval'
       )
     })
-    it('appregv2 - can request registration to a product version with app auth strategy id with feature flag enabled', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
+    it('can request registration to a product version with app auth strategy id with feature flag enabled', () => {
       cy.mockProductDocument(productWithKeyAuthAppAuthStrategy.id)
       cy.mockProduct(productWithKeyAuthAppAuthStrategy.id, productWithKeyAuthAppAuthStrategy, [versionWithKeyAuthAuthStrategy])
       cy.mockProductVersionApplicationRegistration(versionWithKeyAuthAuthStrategy)
@@ -928,36 +848,7 @@ describe('Application Registration', () => {
         'You will be notified upon approval'
       )
     })
-    it('appreg-v2 - feature flag off - does not show auth strategy card', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: false
-        }
-      ])
-      cy.mockProductDocument()
-      cy.mockProduct(product.id, product, [versionWithKeyAuthAuthStrategy])
-      cy.mockProductVersionApplicationRegistration(versions[0])
-      cy.mockGetProductDocuments(product.id)
-      cy.mockProductOperations(product.id, versions[0].id)
-      cy.mockProductVersionSpec(product.id, versions[0].id)
-      cy.mockRegistrations('*', []) // mock with empty so that we add one.
-
-      cy.viewport(1440, 900)
-      cy.visit(`/spec/${product.id}`)
-      cy.get('.swagger-ui', { timeout: 12000 }).should('exist')
-
-      cy.get('[data-testid="auth-strategy-card"]').should('not.exist')
-      cy.get('[data-testid="app-reg-v2-register-btn"]').should('not.exist')
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).should('exist')
-    })
-    it('appreg-v2 - feature flag on - shows information about application auth strategy (key-auth)', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
+    it('shows information about application auth strategy (key-auth)', () => {
       cy.mockProductDocument()
       cy.mockProduct(product.id, product, [versionWithKeyAuthAuthStrategy])
       cy.mockProductVersionApplicationRegistration(versions[0])
@@ -975,15 +866,8 @@ describe('Application Registration', () => {
       cy.get('[data-testid="auth-method-key-auth"]').should('exist')
       cy.get('[data-testid="app-reg-v2-bearer"]').should('not.exist')
       cy.get('[data-testid="app-reg-v2-register-btn"]').should('exist')
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).should('not.exist')
     })
-    it('appreg-v2 - feature flag on - shows information about application auth strategy (oidc auth)', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
+    it('shows information about application auth strategy (oidc auth)', () => {
       cy.mockProductDocument()
       cy.mockProduct(product.id, product, [versionWithOidcAuthStrategy])
       cy.mockProductVersionApplicationRegistration(versions[0])
@@ -1003,16 +887,9 @@ describe('Application Registration', () => {
         cy.get(`[data-testid="auth-method-${method}"]`).should('exist')
       })
       cy.get('[data-testid="app-reg-v2-register-btn"]').should('exist')
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).should('not.exist')
     })
 
-    it('appregv2 - shows link to create new application if no applications match with feature flag enabled', () => {
-      cy.mockLaunchDarklyFlags([
-        {
-          name: 'tdx-3531-app-reg-v2',
-          value: true
-        }
-      ])
+    it('shows link to create new application if no applications match with feature flag enabled', () => {
       cy.mockProductDocument(productWithKeyAuthAppAuthStrategy.id, versionWithKeyAuthAuthStrategy.id)
       cy.mockProduct(productWithKeyAuthAppAuthStrategy.id, productWithKeyAuthAppAuthStrategy, [versionWithKeyAuthAuthStrategy])
       cy.mockProductVersionApplicationRegistration(versionWithKeyAuthAuthStrategy)
@@ -1052,7 +929,7 @@ describe('Application Registration', () => {
       cy.mockApplications(apps, 4)
       cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
 
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
+      cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 }).click()
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
       cy.get('[data-testid="available-scopes-select"]').should('not.exist')
@@ -1086,7 +963,7 @@ describe('Application Registration', () => {
       cy.mockApplications(apps, 4)
       cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
 
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
+      cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 }).click()
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
       cy.get('.available-scopes-select').should('exist')
@@ -1108,7 +985,7 @@ describe('Application Registration', () => {
       cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, apps)
       cy.mockGrantedScopes(versions[0].id, apps[0].id, ['scope1', 'scope2'])
 
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
+      cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 }).click()
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('contain', apps[0].name).click()
 
@@ -1144,7 +1021,7 @@ describe('Application Registration', () => {
       cy.mockApplications(apps, 3)
       cy.mockProductVersionAvailableRegistrations(product.id, versions[0].id, [apps[2]])
 
-      cy.get('[data-testid="register-button"]', { timeout: 12000 }).click()
+      cy.get('[data-testid="app-reg-v2-register-btn"]', { timeout: 12000 }).click()
       cy.get(selectors.appRegModal).should('exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[0].name}"]`).should('not.exist')
       cy.get(`${selectors.appRegModal} [data-testid="register-${apps[1].name}"]`).should('not.exist')
@@ -1153,7 +1030,7 @@ describe('Application Registration', () => {
   })
 
   it("can't refresh token of existing application without dcr", () => {
-    cy.mockApplications([apps[0]], 1)
+    cy.mockApplications([appWithAuthStrategy], 1)
     cy.visit('/my-apps')
 
     cy.get('[data-testid="applications-table"] tbody tr .actions-badge')
@@ -1164,49 +1041,9 @@ describe('Application Registration', () => {
     cy.get('[data-testid="dropdown-delete-application"]').should('exist')
   })
 
-  it('show credentials table and not dcr secret table if portal is not dcr ', () => {
-    cy.mockApplications([{ ...apps[0] }], 1)
-    mockApplicationWithCredAndReg({ ...apps[0] })
-
-    cy.intercept('GET', '**/api/v2/portal', {
-      dcr_provider_ids: []
-    }).as('getPortalContext')
-
-    cy.visit('/my-apps')
-
-    cy.get('[data-testid="applications-table"] tbody tr').click()
-
-    cy.wait('@getPortalContext')
-
-    cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
-      statusCode: 200,
-      body: { client_secret: 'SECRET_TOKEN' }
-    }).as('refreshToken')
-
-    cy.get('[data-testid="client-secret-table"]').should('not.exist')
-    cy.get('[data-testid="client-secret-table"] [data-testid="refresh-secret-button"]').should('not.exist')
-    cy.get('.credentials-list').should('exist')
-  })
-
-  it('app-reg-v2 - show credentials table if app is keyauth ', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
-    const keyAuthApp = {
-      ...apps[0],
-      auth_strategy: {
-        id: 'key-auth-strat-id',
-        name: 'keyauthstrat',
-        credential_type: AuthStrategyKeyAuthCredentialTypeEnum.KeyAuth,
-        key_names: ['key1', 'key2']
-      }
-    }
-
-    cy.mockApplications([{ ...keyAuthApp }], 1)
-    mockApplicationWithCredAndReg({ ...keyAuthApp })
+  it('show credentials table if app is keyauth ', () => {
+    cy.mockApplications([{ ...appWithAuthStrategy }], 1)
+    mockApplicationWithCredAndReg({ ...appWithAuthStrategy })
 
     cy.visit('/my-apps')
 
@@ -1216,13 +1053,7 @@ describe('Application Registration', () => {
     cy.get('[data-testid="client-secret-table"] [data-testid="refresh-secret-button"]').should('not.exist')
     cy.get('.credentials-list').should('exist')
   })
-  it('app-reg-v2 - show auth strategy info for key-auth app', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
+  it('show auth strategy info for key-auth app', () => {
     const keyAuthApp = {
       ...apps[0],
       auth_strategy: {
@@ -1233,8 +1064,8 @@ describe('Application Registration', () => {
       }
     }
 
-    cy.mockApplications([{ ...keyAuthApp }], 1)
-    mockApplicationWithCredAndReg({ ...keyAuthApp })
+    cy.mockApplications([{ ...appWithAuthStrategy }], 1)
+    mockApplicationWithCredAndReg({ ...appWithAuthStrategy })
 
     cy.visit('/my-apps')
 
@@ -1248,27 +1079,7 @@ describe('Application Registration', () => {
     })
     cy.get('[data-testid="auth-strategy-credential-type"]').should('exist').should('contain.text', 'Key Auth')
   })
-  it('app-reg-v2 - does not show any tables if app is oidc ', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
-    const oidcApp = {
-      ...apps[0],
-      auth_strategy: {
-        id: 'oidc-strat-id',
-        name: 'oidc-strat',
-        auth_methods: [
-          'client_credentials',
-          'session',
-          'bearer'
-        ],
-        credential_type: AuthStrategyClientCredentialsCredentialTypeEnum.SelfManagedClientCredentials
-      }
-    }
-
+  it('does not show any tables if app is oidc ', () => {
     cy.mockApplications([{ ...oidcApp }], 1)
     mockApplicationWithCredAndReg({ ...oidcApp })
 
@@ -1280,27 +1091,7 @@ describe('Application Registration', () => {
     cy.get('[data-testid="client-secret-table"] [data-testid="refresh-secret-button"]').should('not.exist')
     cy.get('.credentials-list').should('not.exist')
   })
-  it('app-reg-v2 - show auth strategy info for oidc app', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
-    const oidcApp = {
-      ...apps[0],
-      auth_strategy: {
-        id: 'oidc-strat-id',
-        name: 'oidc-strat',
-        auth_methods: [
-          'client_credentials',
-          'session',
-          'bearer'
-        ],
-        credential_type: AuthStrategyClientCredentialsCredentialTypeEnum.SelfManagedClientCredentials
-      }
-    }
-
+  it('show auth strategy info for oidc app', () => {
     cy.mockApplications([{ ...oidcApp }], 1)
     mockApplicationWithCredAndReg({ ...oidcApp })
 
@@ -1311,36 +1102,16 @@ describe('Application Registration', () => {
     cy.get('[data-testid="auth-strategy-auth-methods-label"]').should('exist')
     cy.get('[data-testid="auth-strategy-key-names-label"]').should('not.exist')
     cy.get('[data-testid="auth-strategy-title"]').should('exist').should('contain.text', oidcApp.auth_strategy.name)
-    cy.get('[data-testid="auth-strategy-credential-type"]').should('exist').should('contain.text', 'Self Managed Client Credentials')
+    cy.get('[data-testid="auth-strategy-credential-type"]').should('exist').should('contain.text', 'Self Managed')
     oidcApp.auth_strategy.auth_methods.forEach((method) => {
       cy.get(`[data-testid="auth-method-${method}"]`).should('exist')
     })
   })
-  it('app-reg-v2 - show dcr token table if app is DCR ', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
+  it('show dcr token table if app is DCR ', () => {
     cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
       statusCode: 200,
       body: { client_secret: 'SECRET_TOKEN' }
     }).as('refreshToken')
-
-    const dcrApp = {
-      ...apps[0],
-      auth_strategy: {
-        id: 'okta-strat-id',
-        name: 'dcr-strat',
-        auth_methods: [
-          'bearer',
-          'client_credentials',
-          'session'
-        ],
-        credential_type: AuthStrategyClientCredentialsCredentialTypeEnum.ClientCredentials
-      }
-    }
 
     cy.mockApplications([{ ...dcrApp }], 1)
     mockApplicationWithCredAndReg({ ...dcrApp })
@@ -1372,27 +1143,7 @@ describe('Application Registration', () => {
 
     cy.get('[data-testid="application-secret-token-modal"]').should('not.exist')
   })
-  it('app-reg-v2 - show auth strategy info for dcr app', () => {
-    cy.mockLaunchDarklyFlags([
-      {
-        name: 'tdx-3531-app-reg-v2',
-        value: true
-      }
-    ])
-    const dcrApp = {
-      ...apps[0],
-      auth_strategy: {
-        id: 'okta-strat-id',
-        name: 'dcr-strat',
-        auth_methods: [
-          'bearer',
-          'client_credentials',
-          'session'
-        ],
-        credential_type: AuthStrategyClientCredentialsCredentialTypeEnum.ClientCredentials
-      }
-    }
-
+  it('show auth strategy info for dcr app', () => {
     cy.mockApplications([{ ...dcrApp }], 1)
     mockApplicationWithCredAndReg({ ...dcrApp })
 
@@ -1410,15 +1161,14 @@ describe('Application Registration', () => {
 
   describe('Credential management with DCR', () => {
     it('can refresh token of existing application with dcr', () => {
-      cy.mockDcrPortal()
-      cy.mockApplications([{ ...apps[0] }], 1)
+      cy.mockApplications([dcrApp], 1)
       cy.visit('/my-apps')
 
       cy.get('[data-testid="applications-table"] tbody tr .actions-badge')
         .should('have.length', 1)
         .click()
 
-      cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
+      cy.intercept('POST', `api/v2/applications/${dcrApp.id}/refresh-token`, {
         statusCode: 200,
         body: { client_secret: 'SECRET_TOKEN' }
       }).as('refreshToken')
@@ -1447,15 +1197,14 @@ describe('Application Registration', () => {
     })
 
     it('handles failure to refresh token of existing application with dcr', () => {
-      cy.mockDcrPortal()
-      cy.mockApplications([{ ...apps[0] }], 1)
+      cy.mockApplications([dcrApp], 1)
       cy.visit('/my-apps')
 
       cy.get('[data-testid="applications-table"] tbody tr .actions-badge')
         .should('have.length', 1)
         .click()
 
-      cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
+      cy.intercept('POST', `api/v2/applications/${dcrApp.id}/refresh-token`, {
         statusCode: 500,
         body: { error: 'Internal Server Error' }
       }).as('refreshToken')
@@ -1469,19 +1218,16 @@ describe('Application Registration', () => {
     })
 
     it('can refresh token of existing application with dcr from application page', () => {
-      cy.mockApplications([{ ...apps[0], created_at: '2022-11-02T18:59:30.789Z' }], 1)
-      mockApplicationWithCredAndReg({ ...apps[0], created_at: '2022-11-02T18:59:30.789Z' })
-      cy.mockDcrPortal()
+      cy.mockApplications([dcrApp], 1)
+      mockApplicationWithCredAndReg({ ...dcrApp, created_at: '2022-11-02T18:59:30.789Z' })
       cy.visit('/my-apps')
 
       cy.get('[data-testid="applications-table"] tbody tr').click()
 
-      cy.intercept('POST', `api/v2/applications/${apps[0].id}/refresh-token`, {
+      cy.intercept('POST', `api/v2/applications/${dcrApp.id}/refresh-token`, {
         statusCode: 200,
         body: { client_secret: 'SECRET_TOKEN' }
       }).as('refreshToken')
-
-      cy.wait('@isDcrPortal')
 
       cy.get('[data-testid="client-secret-table"]').should('exist')
       cy.get('[data-testid="client-secret-table"] [data-testid="refresh-secret-button"]').should('exist').click()
